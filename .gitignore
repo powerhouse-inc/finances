@@ -1,0 +1,12 @@
+/dist
+/coverage
+/node_modules
+/storybook-static
+
+**/gen
+
+.env.local
+.env
+
+.ph
+projects-import.js
