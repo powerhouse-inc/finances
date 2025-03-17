@@ -60,18 +60,18 @@
     "@eslint/js": "^9.18.0",
     "@powerhousedao/analytics-engine-core": "^0.3.2",
     "@powerhousedao/codegen": "^0.32.0",
-    "@powerhousedao/config": "^1.13.0",
+    "@powerhousedao/config": "1.13.0",
     "@powerhousedao/design-system": "^1.22.1",
-    "@powerhousedao/ph-cli": "^0.30.0",
+    "@powerhousedao/ph-cli": "^0.39.2-dev.0",
     "@powerhousedao/reactor-api": "^1.17.0",
     "@powerhousedao/reactor-local": "^1.16.0",
     "@powerhousedao/scalars": "^1.20.0",
+    "@tailwindcss/postcss": "^4.0.14",
     "@types/eslint__js": "^8.42.3",
     "@types/node": "^22.10.9",
     "@types/react": "^18.3.18",
     "@typescript-eslint/eslint-plugin": "^8.21.0",
     "@typescript-eslint/parser": "^8.21.0",
-    "autoprefixer": "^10.4.20",
     "document-model": "^2.18.0",
     "document-model-libs": "^1.128.0",
     "eslint": "^9.18.0",
@@ -87,7 +87,7 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "tailwind-scrollbar": "^3.1.0",
-    "tailwindcss": "^3.4.17",
+    "tailwindcss": "^4.0.14",
     "tailwindcss-animate": "^1.0.7",
     "tsx": "^4.19.2",
     "typescript": "^5.7.3",
@@ -98,5 +98,8 @@
     "vitest": "^2.1.8",
     "zod": "^3.24.1"
   },
-  "description": ""
+  "description": "",
+  "dependencies": {
+    "@powerhousedao/reactor-browser": "^1.21.0"
+  }
 }
