@@ -1,5 +1,5 @@
 {
-  "name": "finances",
+  "name": "atlas-test",
   "version": "1.0.0",
   "license": "AGPL-3.0-only",
   "types": "dist/index.d.ts",
@@ -24,10 +24,15 @@
       "types": "./dist/documentModels.d.ts",
       "import": "./dist/es/documentModels.js",
       "require": "./dist/cjs/documentModels.js"
+    },
+    "./manifest": {
+      "types": "./dist/manifest.d.ts",
+      "require": "./dist/cjs/manifest.js",
+      "import": "./dist/es/manifest.js"
     }
   },
   "scripts": {
-    "generate": "powerhouse generate",
+    "generate": "ph-cli generate",
     "dev": "ph-cli dev --config-file ./powerhouse.config.json",
     "format-generated": "npx prettier \"**/{gen,processors,editors}/**/*\" --write --ignore-path --no-error-on-unmatched-pattern >> /dev/null",
     "postgenerate": "npm run format-generated",
@@ -44,13 +49,10 @@
     "connect": "ph-cli connect",
     "reactor": "ph-cli reactor",
     "install:storybook": "tsx scripts/index.ts",
-    "service": "ph-cli service",
-    "service-startup": "bash ./node_modules/@powerhousedao/ph-cli/dist/scripts/service-startup.sh",
-    "service-unstartup": "bash ./node_modules/@powerhousedao/ph-cli/dist/scripts/service-unstartup.sh"
+    "service": "ph-cli service"
   },
   "peerDependencies": {
-    "document-model": "^2.18.0",
-    "document-model-libs": "^1.128.0",
+    "document-model": "^2.20.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
@@ -59,21 +61,22 @@
     "@eslint/eslintrc": "^3.2.0",
     "@eslint/js": "^9.18.0",
     "@powerhousedao/analytics-engine-core": "^0.3.2",
-    "@powerhousedao/codegen": "^0.32.0",
-    "@powerhousedao/config": "1.13.0",
-    "@powerhousedao/design-system": "^1.22.1",
-    "@powerhousedao/ph-cli": "^0.39.2-dev.0",
-    "@powerhousedao/reactor-api": "^1.17.0",
-    "@powerhousedao/reactor-local": "^1.16.0",
-    "@powerhousedao/scalars": "^1.20.0",
+    "@powerhousedao/codegen": "dev",
+    "@powerhousedao/config": "dev",
+    "@powerhousedao/connect": "dev",
+    "@powerhousedao/design-system": "dev",
+    "@powerhousedao/ph-cli": "dev",
+    "@powerhousedao/reactor-api": "dev",
+    "@powerhousedao/reactor-browser": "dev",
+    "@powerhousedao/reactor-local": "dev",
+    "@powerhousedao/scalars": "dev",
     "@tailwindcss/postcss": "^4.0.14",
     "@types/eslint__js": "^8.42.3",
     "@types/node": "^22.10.9",
     "@types/react": "^18.3.18",
     "@typescript-eslint/eslint-plugin": "^8.21.0",
     "@typescript-eslint/parser": "^8.21.0",
-    "document-model": "^2.18.0",
-    "document-model-libs": "^1.128.0",
+    "document-model": "2.20.0",
     "eslint": "^9.18.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-prettier": "^5.2.3",
@@ -98,8 +101,9 @@
     "vitest": "^2.1.8",
     "zod": "^3.24.1"
   },
-  "description": "",
   "dependencies": {
-    "@powerhousedao/reactor-browser": "^1.21.0"
-  }
+    "@sky-ph/atlas": "^1.2.11",
+    "error": "^10.4.0"
+  },
+  "description": ""
 }
