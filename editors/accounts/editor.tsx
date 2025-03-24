@@ -1,6 +1,13 @@
 import { EditorProps, hashKey } from "document-model";
-import { AccountsDocument, AccountType, AccountEntry, actions } from "../../document-models/accounts";
+import { AccountsDocument, AccountType, actions } from "../../document-models/accounts";
+import { AccountEntry as BaseAccountEntry } from "../../document-models/accounts/gen/types";
 import { useState } from "react";
+
+type AccountEntry = BaseAccountEntry & {
+  chain?: string;
+  accountTransactionsId?: string;
+  owners?: string[];
+};
 
 export type IProps = EditorProps<AccountsDocument>;
 
@@ -73,60 +80,69 @@ export default function Editor(props: IProps) {
         <h2>User Accounts</h2>
       </div>
 
-      {/* Table Header */}
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: '200px 300px 150px 150px 200px 200px 200px auto',
-        gap: '16px',
-        padding: '12px',
-        borderBottom: '1px solid #eee',
-        fontWeight: 'bold'
+      {/* Table Container */}
+      <div style={{
+        width: '100%',
+        overflowX: 'auto',
+        whiteSpace: 'nowrap'
       }}>
-        <div style={{ textAlign: 'left' }}>Name</div>
-        <div style={{ textAlign: 'left' }}>Address</div>
-        <div style={{ textAlign: 'left' }}>Type</div>
-        <div style={{ textAlign: 'left' }}>Chain</div>
-        <div style={{ textAlign: 'left' }}>Budget Path</div>
-        <div style={{ textAlign: 'left' }}>Transactions ID</div>
-        <div style={{ textAlign: 'left' }}>Owners</div>
-        <div style={{ textAlign: 'left' }}>Actions</div>
-      </div>
+        {/* Table Header */}
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: '1fr 1.5fr 1fr 1fr 1fr 1fr 1fr 80px',
+          minWidth: '1200px',
+          gap: '16px',
+          padding: '12px',
+          borderBottom: '1px solid #eee',
+          fontWeight: 'bold'
+        }}>
+          <div style={{ textAlign: 'left' }}>Name</div>
+          <div style={{ textAlign: 'left' }}>Address</div>
+          <div style={{ textAlign: 'left' }}>Type</div>
+          <div style={{ textAlign: 'left' }}>Chain</div>
+          <div style={{ textAlign: 'left' }}>Budget Path</div>
+          <div style={{ textAlign: 'left' }}>Transactions ID</div>
+          <div style={{ textAlign: 'left' }}>Owners</div>
+          <div style={{ textAlign: 'left' }}>Actions</div>
+        </div>
 
-      {/* Table Body */}
-      {state.accounts.map((account: AccountEntry) => (
-        <div 
-          key={account.id}
-          style={{ 
-            display: 'grid', 
-            gridTemplateColumns: '200px 300px 150px 150px 200px 200px 200px auto',
-            gap: '16px',
-            padding: '12px',
-            borderBottom: '1px solid #eee',
-            alignItems: 'center'
-          }}
-        >
-          <div style={{ color: '#007bff', textAlign: 'left', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{account.name}</div>
-          <div style={{ textAlign: 'left', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{account.account}</div>
-          <div style={{ textAlign: 'left', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{account.type}</div>
-          <div style={{ textAlign: 'left', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{account.chain}</div>
-          <div style={{ textAlign: 'left', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{account.budgetPath}</div>
-          <div style={{ textAlign: 'left', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{account.accountTransactionsId}</div>
-          <div style={{ textAlign: 'left', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{account.owners?.join(', ')}</div>
-          <button
-            onClick={() => dispatch(actions.deleteAccount({ id: account.id }))}
-            style={{
-              padding: '4px 8px',
-              backgroundColor: '#dc3545',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer'
+        {/* Table Body */}
+        {state.accounts.map((account: AccountEntry) => (
+          <div 
+            key={account.id}
+            style={{ 
+              display: 'grid', 
+              gridTemplateColumns: '1fr 1.5fr 1fr 1fr 1fr 1fr 1fr 80px',
+              minWidth: '1200px',
+              gap: '16px',
+              padding: '12px',
+              borderBottom: '1px solid #eee',
+              alignItems: 'center'
             }}
           >
-            Delete
-          </button>
-        </div>
-      ))}
+            <div style={{ color: '#007bff', textAlign: 'left', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{account.name}</div>
+            <div style={{ textAlign: 'left', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{account.account}</div>
+            <div style={{ textAlign: 'left', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{account.type}</div>
+            <div style={{ textAlign: 'left', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{account.chain}</div>
+            <div style={{ textAlign: 'left', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{account.budgetPath}</div>
+            <div style={{ textAlign: 'left', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{account.accountTransactionsId}</div>
+            <div style={{ textAlign: 'left', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{account.owners?.join(', ')}</div>
+            <button
+              onClick={() => dispatch(actions.deleteAccount({ id: account.id }))}
+              style={{
+                padding: '4px 8px',
+                backgroundColor: '#dc3545',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer'
+              }}
+            >
+              Delete
+            </button>
+          </div>
+        ))}
+      </div>
 
       {/* Create Account Modal */}
       {showCreateForm && (
