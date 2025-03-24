@@ -1,5 +1,5 @@
 {
-  "name": "atlas-test",
+  "name": "finances",
   "version": "1.0.0",
   "license": "AGPL-3.0-only",
   "types": "dist/index.d.ts",

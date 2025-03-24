@@ -1,23 +1,35 @@
 {
     "name": "powerhouse/finances",
-    "description": "A brief description of your PH package.",
-    "category": "your-category",
+    "description": "Financial management and tracking tools",
+    "category": "Finance",
     "publisher": {
-        "name": "your-publisher-name",
-        "url": "your-publisher-url"
+        "name": "Powerhouse",
+        "url": "https://www.powerhouse.inc/"
     },
     "documentModels": [
         {
-            "id": "your-model-id",
-            "name": "your-model-name"
+            "id": "powerhouse/document-drive",
+            "name": "Document Drive"
+        },
+        {
+            "id": "powerhouse/finances",
+            "name": "Finances Document"
         }
     ],
     "editors": [
         {
-            "id": "your-editor-id",
-            "name": "your-editor-name",
-            "documentTypes": ["your-model-id"]
+            "id": "FinancesDriveExplorer",
+            "name": "Finances Drive Explorer",
+            "documentTypes": [
+                "powerhouse/document-drive"
+            ]
         }
     ],
-    "apps": []
+    "apps": [
+        {
+            "id": "powerhouse/common",
+            "name": "Finances App",
+            "driveEditor": "FinancesDriveExplorer"
+        }
+    ]
 }
