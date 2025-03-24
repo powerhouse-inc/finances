@@ -8,13 +8,15 @@ import { AccountsAccountsOperations } from "../../gen/accounts/operations";
 
 export const reducer: AccountsAccountsOperations = {
   createAccountOperation(state, action, dispatch) {
-    // Add new account to the accounts array
     state.accounts.push({
       id: action.input.id,
       name: action.input.name,
+      accountTransactionsId: action.input.accountTransactionsId,
+      chain: action.input.chain,
       account: action.input.account,
       budgetPath: action.input.budgetPath,
       type: action.input.type,
+      owners: action.input.owners,
     });
   },
 
@@ -28,6 +30,12 @@ export const reducer: AccountsAccountsOperations = {
     if (action.input.name !== undefined) {
       account.name = action.input.name;
     }
+    if (action.input.accountTransactionsId !== undefined) {
+      account.accountTransactionsId = action.input.accountTransactionsId;
+    }
+    if (action.input.chain !== undefined) {
+      account.chain = action.input.chain;
+    }
     if (action.input.account !== undefined) {
       account.account = action.input.account;
     }
@@ -36,6 +44,9 @@ export const reducer: AccountsAccountsOperations = {
     }
     if (action.input.type !== undefined) {
       account.type = action.input.type;
+    }
+    if (action.input.owners !== undefined) {
+      account.owners = action.input.owners;
     }
   },
 

@@ -13,7 +13,7 @@
             "changeLog": [],
             "state": {
                 "global": {
-                    "schema": "type AccountsState {\n    accounts: [ AccountEntry! ]!\n}\n\ntype AccountEntry {\n\t\tid: OID!\n\t\tname: OLabel  \n\t\taccount: EthereumAddress\n\t\tbudgetPath: String\n\t\ttype: AccountType\n}\n\nenum AccountType {\n\tProtocol\n\tAuditor\n\tOperational\n\tPayment Processor\n}",
+                    "schema": "type AccountsState {\n    accounts: [ AccountEntry! ]!\n}\n\ntype AccountEntry {\n\t\tid: OID!\n\t\tname: OLabel  \n\t\taccountTransactionsId: PHID\n\t\tchain: String\n\t\taccount: EthereumAddress\n\t\tbudgetPath: String\n\t\ttype: AccountType\n\t\towners: [PHID]\n}\n\nenum AccountType {\n\tProtocol\n\tAuditor\n\tOperational\n\tPayment Processor\n}",
                     "initialValue": "{\n  \"accounts\": []\n}",
                     "examples": []
                 },
@@ -33,7 +33,7 @@
                             "id": "exjRXJOmtYfjW/lY86kkdV77D38=",
                             "name": "CREATE_ACCOUNT",
                             "description": "Adds a new account to the accounts state.",
-                            "schema": "input CreateAccountInput {\n  name: OLabel\n  account: EthereumAddress!\n  budgetPath: String\n  type: AccountType!\n}\n\nenum AccountType {\n\tProtocol\n\tAuditor\n\tOperational\n\tPayment Processor\n}",
+                            "schema": "input CreateAccountInput {\n    id: OID!\n\tname: OLabel  \t\t\n    accountTransactionsId: PHID\n\tchain: String\n\taccount: EthereumAddress\n\tbudgetPath: String\n\ttype: AccountType\n\towners: [PHID]\n}\n\nenum AccountType {\n\tProtocol\n\tAuditor\n\tOperational\n\tPayment Processor\n}",
                             "template": "",
                             "reducer": "",
                             "errors": [],
@@ -44,7 +44,7 @@
                             "id": "k89uw03p6AfiVUqNoJ0iWPnry2s=",
                             "name": "UPDATE_ACCOUNT",
                             "description": "Updates an existing account in the accounts state.",
-                            "schema": "input UpdateAccountInput {\n  name: OLabel\n  account: EthereumAddress\n  budgetPath: String\n  type: AccountType\n}",
+                            "schema": "input UpdateAccountInput {\n    id: OID!\n    name: OLabel  \n    accountTransactionsId: PHID\n    chain: String\n    account: EthereumAddress\n    budgetPath: String\n    type: AccountType\n    owners: [PHID]\n}\n\nenum AccountType {\n\tProtocol\n\tAuditor\n\tOperational\n\tPayment Processor\n}",
                             "template": "",
                             "reducer": "",
                             "errors": [],

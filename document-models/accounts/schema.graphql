@@ -17,9 +17,12 @@ type AccountsState {
 type AccountEntry {
 		id: OID!
 		name: OLabel  
+		accountTransactionsId: PHID
+		chain: String
 		account: EthereumAddress
 		budgetPath: String
 		type: AccountType
+		owners: [PHID]
 }
 
 enum AccountType {
@@ -34,10 +37,14 @@ enum AccountType {
 # accounts
 
 input CreateAccountInput {
-  name: OLabel
-  account: EthereumAddress!
-  budgetPath: String
-  type: AccountType!
+    id: OID!
+	name: OLabel  		
+    accountTransactionsId: PHID
+	chain: String
+	account: EthereumAddress
+	budgetPath: String
+	type: AccountType
+	owners: [PHID]
 }
 
 enum AccountType {
@@ -48,10 +55,21 @@ enum AccountType {
 }
 
 input UpdateAccountInput {
-  name: OLabel
-  account: EthereumAddress
-  budgetPath: String
-  type: AccountType
+    id: OID!
+    name: OLabel  
+    accountTransactionsId: PHID
+    chain: String
+    account: EthereumAddress
+    budgetPath: String
+    type: AccountType
+    owners: [PHID]
+}
+
+enum AccountType {
+	Protocol
+	Auditor
+	Operational
+	Payment Processor
 }
 
 input DeleteAccountInput {

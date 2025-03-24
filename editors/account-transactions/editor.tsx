@@ -16,7 +16,7 @@ export default function Editor(props: IProps) {
   } = document;
 
   const [transactionType, setTransactionType] = useState<"crypto" | "bank">(
-    "crypto"
+    "crypto",
   );
   const [newTransaction, setNewTransaction] = useState({
     fromAccount: "",
@@ -67,7 +67,7 @@ export default function Editor(props: IProps) {
         amount: parseFloat(newTransaction.amount),
         datetime: new Date().toISOString(),
         details,
-      })
+      }),
     );
 
     setNewTransaction({
@@ -89,7 +89,7 @@ export default function Editor(props: IProps) {
       actions.updateTransactionBudget({
         txId: transactionId,
         budgetId: editingBudget.budget,
-      })
+      }),
     );
 
     setEditingBudget(null);
@@ -98,7 +98,7 @@ export default function Editor(props: IProps) {
   const getSortedTransactions = () => {
     if (!state?.transactions) return [];
     return [...state.transactions].sort(
-      (a, b) => new Date(b.datetime).getTime() - new Date(a.datetime).getTime()
+      (a, b) => new Date(b.datetime).getTime() - new Date(a.datetime).getTime(),
     );
   };
 
