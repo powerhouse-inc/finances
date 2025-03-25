@@ -27,7 +27,7 @@
     ],
     "apps": [
         {
-            "id": "powerhouse/common",
+            "id": "powerhouse/finances-drive-explorer",
             "name": "Finances App",
             "driveEditor": "FinancesDriveExplorer"
         }
