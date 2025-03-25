@@ -103,6 +103,7 @@
   },
   "dependencies": {
     "@sky-ph/atlas": "^1.2.11",
+    "ajv": "^8.17.1",
     "error": "^10.4.0"
   },
   "description": ""

@@ -8,5 +8,8 @@
     "port": 4001
   },
   "packages": [
+    {
+      "name": "finances"
+    }
   ]
 }

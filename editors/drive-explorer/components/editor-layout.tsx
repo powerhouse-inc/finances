@@ -21,13 +21,13 @@ export function EditorLayout({
 }: EditorLayoutProps) {
   const { useDriveDocumentStates, addDocument, documentModels } =
     useDriveContext();
-    
+
   // Add debugging
   console.log("EditorLayout - driveId:", driveId);
   console.log("EditorLayout - context:", context);
   console.log("EditorLayout - documentModels:", documentModels);
   console.log("EditorLayout - useDriveContext:", useDriveContext());
-  
+
   const [activeNodeId, setActiveNodeId] = useState<string | undefined>();
   const [openModal, setOpenModal] = useState(false);
   const selectedDocumentModel = useRef<DocumentModelModule | null>(null);
@@ -66,7 +66,7 @@ export function EditorLayout({
   const filteredDocumentModels = documentModels.filter(
     (docModel) => docModel.documentModel.id !== "powerhouse/document-model",
   );
-  
+
   console.log("EditorLayout - filteredDocumentModels:", filteredDocumentModels);
 
   return (

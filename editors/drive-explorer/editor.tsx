@@ -10,7 +10,7 @@ export default function Editor(props: IProps) {
   console.log("DriveExplorer props:", props);
   console.log("DriveExplorer document:", props.document);
   console.log("DriveExplorer context:", props.context);
-  
+
   return (
     <div className="finances-drive-explorer" style={{ height: "100%" }}>
       <WagmiContext>
