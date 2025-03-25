@@ -2,6 +2,13 @@ import { type EditorProps } from "document-model";
 import { EditorLayout } from "./components/editor-layout.js";
 import { type DocumentDriveDocument } from "document-drive";
 import { WagmiContext } from "@powerhousedao/design-system";
+import {
+  DriveContextProvider,
+  type SyncStatus,
+} from "@powerhousedao/reactor-browser";
+import { documentModels } from "../../index.js";
+import { type DocumentModelModule, type PHDocument } from "document-model";
+import { type FileNode } from "document-drive";
 
 export type IProps = EditorProps<DocumentDriveDocument>;
 
@@ -14,30 +21,64 @@ export default function Editor(props: IProps) {
   return (
     <div className="finances-drive-explorer" style={{ height: "100%" }}>
       <WagmiContext>
-        <EditorLayout
-          context={props.context}
-          driveId={props.document.state.global.id}
-          nodes={props.document.state.global.nodes}
+        <DriveContextProvider
+          value={{
+            documentModels: documentModels as DocumentModelModule[],
+            useDriveDocumentStates: () => [{}, async () => {}],
+            addDocument: async () =>
+              ({
+                id: "",
+                documentType: "",
+                kind: "file",
+                name: "",
+                parentFolder: "",
+                synchronizationUnits: [],
+              }) as FileNode,
+            useDocumentEditorProps: () => ({
+              dispatch: () => {},
+              error: null,
+              document: undefined as PHDocument | undefined,
+            }),
+            showSearchBar: false,
+            isAllowedToCreateDocuments: true,
+            selectedNode: null,
+            selectNode: () => {},
+            addFile: async () => {
+              return;
+            },
+            showCreateDocumentModal: async () => ({ name: "" }),
+            useSyncStatus: () => "UNCHANGED" as SyncStatus,
+            useDriveDocumentState: () => ({
+              global: {},
+              local: {},
+            }),
+          }}
         >
-          <style>
-            {`
-              .finances-drive-explorer-header {
-                margin-bottom: 1em;
-              }
-              .finances-drive-explorer > main {
-                border: 1px solid #EEEEEE;
-              }
-              
-              .d-none {
-                display: none;
-              }
-              #document-editor-context > div.flex:first-child {
-                position: absolute;
-                right: 0;
-                top: 16px;
-              }`}
-          </style>
-        </EditorLayout>
+          <EditorLayout
+            context={props.context}
+            driveId={props.document.state.global.id}
+            nodes={props.document.state.global.nodes}
+          >
+            <style>
+              {`
+                .finances-drive-explorer-header {
+                  margin-bottom: 1em;
+                }
+                .finances-drive-explorer > main {
+                  border: 1px solid #EEEEEE;
+                }
+                
+                .d-none {
+                  display: none;
+                }
+                #document-editor-context > div.flex:first-child {
+                  position: absolute;
+                  right: 0;
+                  top: 16px;
+                }`}
+            </style>
+          </EditorLayout>
+        </DriveContextProvider>
       </WagmiContext>
     </div>
   );
