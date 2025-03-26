@@ -7,11 +7,7 @@ import {
 import { type AccountEntry as BaseAccountEntry } from "../../document-models/accounts/gen/types.js";
 import { useState } from "react";
 
-type AccountEntry = BaseAccountEntry & {
-  chain?: string;
-  accountTransactionsId?: string;
-  owners?: string[];
-};
+type AccountEntry = BaseAccountEntry;
 
 export type IProps = EditorProps<AccountsDocument>;
 
@@ -40,6 +36,11 @@ export default function Editor(props: IProps) {
   });
 
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [editingCell, setEditingCell] = useState<{
+    accountId: string;
+    field: keyof AccountEntry;
+    value: string;
+  } | null>(null);
 
   const handleCreateAccount = () => {
     console.log("Creating account:", newAccount);
@@ -61,8 +62,90 @@ export default function Editor(props: IProps) {
     });
   };
 
+  const handleCellEdit = (account: AccountEntry, field: keyof AccountEntry, value: string) => {
+    setEditingCell({ accountId: account.id, field, value });
+  };
+
+  const handleCellSave = () => {
+    if (!editingCell) return;
+
+    const { accountId, field, value } = editingCell;
+    dispatch(
+      actions.updateAccount({
+        id: accountId,
+        [field]: value,
+      })
+    );
+    setEditingCell(null);
+  };
+
+  const handleCellCancel = () => {
+    setEditingCell(null);
+  };
+
+  const handleCellBlur = (originalValue: string | null | undefined) => {
+    if (!editingCell) return;
+    
+    // Only update if the value has changed
+    if (editingCell.value !== (originalValue || "")) {
+      handleCellSave();
+    } else {
+      handleCellCancel();
+    }
+  };
+
   const trackTransactions = () => {
     console.log("Tracking transactions");
+  };
+
+  const renderEditableCell = (account: AccountEntry, field: keyof AccountEntry, value: string | null | undefined) => {
+    const isEditing = editingCell?.accountId === account.id && editingCell?.field === field;
+
+    if (isEditing) {
+      return (
+        <input
+          type="text"
+          value={editingCell.value}
+          onChange={(e) => setEditingCell({ ...editingCell, value: e.target.value })}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") handleCellBlur(value);
+            if (e.key === "Escape") handleCellCancel();
+          }}
+          onBlur={() => handleCellBlur(value)}
+          style={{
+            width: "100%",
+            padding: "4px 8px",
+            border: "1px solid #ddd",
+            borderRadius: "4px",
+            fontSize: "14px",
+          }}
+          autoFocus
+        />
+      );
+    }
+
+    return (
+      <div
+        onClick={() => handleCellEdit(account, field, value || "")}
+        style={{
+          textAlign: "left",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+          cursor: "pointer",
+          padding: "4px 8px",
+          borderRadius: "4px",
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.backgroundColor = "#f8f9fa";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.backgroundColor = "transparent";
+        }}
+      >
+        {value || ""}
+      </div>
+    );
   };
 
   return (
@@ -128,108 +211,44 @@ export default function Editor(props: IProps) {
             display: "grid",
             gridTemplateColumns: "1fr 1.5fr 1fr 1fr 1fr 1fr 1fr 80px",
             minWidth: "1200px",
-            gap: "16px",
-            padding: "12px",
+            gap: "8px",
+            padding: "8px 4px",
             borderBottom: "1px solid #eee",
             fontWeight: "bold",
             backgroundColor: "#f8f9fa",
           }}
         >
-          <div style={{ textAlign: "left" }}>Name</div>
-          <div style={{ textAlign: "left" }}>Address</div>
-          <div style={{ textAlign: "left" }}>Type</div>
-          <div style={{ textAlign: "left" }}>Chain</div>
-          <div style={{ textAlign: "left" }}>Budget Path</div>
-          <div style={{ textAlign: "left" }}>Transactions ID</div>
-          <div style={{ textAlign: "left" }}>Owners</div>
-          <div style={{ textAlign: "left" }}>Actions</div>
+          <div style={{ textAlign: "center" }}>Name</div>
+          <div style={{ textAlign: "center" }}>Address</div>
+          <div style={{ textAlign: "center" }}>Type</div>
+          <div style={{ textAlign: "center" }}>Chain</div>
+          <div style={{ textAlign: "center" }}>Budget Path</div>
+          <div style={{ textAlign: "center" }}>Transactions ID</div>
+          <div style={{ textAlign: "center" }}>Owners</div>
+          <div style={{ textAlign: "center" }}>Actions</div>
         </div>
 
         {/* Table Body */}
-        {state.accounts.map((account: BaseAccountEntry) => (
+        {state.accounts.map((account: AccountEntry) => (
           <div
             key={account.id}
             style={{
               display: "grid",
               gridTemplateColumns: "1fr 1.5fr 1fr 1fr 1fr 1fr 1fr 80px",
               minWidth: "1200px",
-              gap: "16px",
-              padding: "12px",
+              gap: "8px",
+              padding: "8px 4px",
               borderBottom: "1px solid #eee",
               alignItems: "center",
             }}
           >
-            <div
-              style={{
-                color: "#007bff",
-                textAlign: "left",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {account.name}
-            </div>
-            <div
-              style={{
-                textAlign: "left",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {account.account}
-            </div>
-            <div
-              style={{
-                textAlign: "left",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {account.type}
-            </div>
-            <div
-              style={{
-                textAlign: "left",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {account.chain}
-            </div>
-            <div
-              style={{
-                textAlign: "left",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {account.budgetPath}
-            </div>
-            <div
-              style={{
-                textAlign: "left",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {account.accountTransactionsId}
-            </div>
-            <div
-              style={{
-                textAlign: "left",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {account.owners?.join(", ")}
-            </div>
+            {renderEditableCell(account, "name", account.name)}
+            {renderEditableCell(account, "account", account.account)}
+            {renderEditableCell(account, "type", account.type)}
+            {renderEditableCell(account, "chain", account.chain)}
+            {renderEditableCell(account, "budgetPath", account.budgetPath)}
+            {renderEditableCell(account, "accountTransactionsId", account.accountTransactionsId)}
+            {renderEditableCell(account, "owners", account.owners?.join(", "))}
             <button
               onClick={() =>
                 dispatch(actions.deleteAccount({ id: account.id }))
