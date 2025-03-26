@@ -60,7 +60,7 @@
     "@eslint/js": "^9.22.0",
     "@powerhousedao/analytics-engine-core": "^0.3.2",
     "@powerhousedao/codegen": "^0.48.0",
-    "@powerhousedao/ph-cli": "^0.40.7-dev.0",
+    "@powerhousedao/ph-cli": "^0.40.7-dev.3",
     "@powerhousedao/reactor-api": "^1.29.4",
     "@powerhousedao/reactor-browser": "1.22.5-dev.1",
     "@powerhousedao/reactor-local": "^1.27.4",
