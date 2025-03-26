@@ -4,7 +4,7 @@ import {
   actions,
 } from "../../document-models/account-transactions/index.js";
 import { useState, useEffect } from "react";
-import { formatTokenAmount, getTokenSymbol } from "./utils.js";
+import { Button } from "@powerhousedao/design-system"
 
 export type IProps = EditorProps<AccountTransactionsDocument>;
 
@@ -16,6 +16,8 @@ export default function Editor(props: IProps) {
 
   const [hasEditedAccount, setHasEditedAccount] = useState(false);
   const [newUsername, setNewUsername] = useState(account?.username || "");
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [ethereumAddress, setEthereumAddress] = useState("");
 
   const [newTransaction, setNewTransaction] = useState({
     counterParty: "",
@@ -33,7 +35,7 @@ export default function Editor(props: IProps) {
     e.preventDefault();
 
     try {
-      await dispatch(
+      dispatch(
         actions.createTransaction({
           counterParty: newTransaction.counterParty,
           amount: parseFloat(newTransaction.amount),
@@ -55,6 +57,7 @@ export default function Editor(props: IProps) {
           blockNumber: "",
         },
       });
+      setShowTransactionForm(false);
     } catch (error) {
       console.error("Error creating transaction:", error);
     }
@@ -65,7 +68,7 @@ export default function Editor(props: IProps) {
     if (hasEditedAccount) return;
 
     try {
-      await dispatch(
+      dispatch(
         actions.updateAccount({
           account: newUsername,
         })
@@ -74,6 +77,14 @@ export default function Editor(props: IProps) {
     } catch (error) {
       console.error("Error updating account:", error);
     }
+  };
+
+  const handleImportSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Store the address for later use
+    console.log("Stored Ethereum address:", ethereumAddress);
+    setShowImportModal(false);
+    setEthereumAddress("");
   };
 
   return (
@@ -159,88 +170,285 @@ export default function Editor(props: IProps) {
         }}
       >
         <h3>Transaction Management</h3>
-        <button
+        <Button
+          size="small"
+          onClick={() => setShowImportModal(true)}
+        >
+          Import Transactions
+        </Button>
+        <Button
+          size="small"
           onClick={() => setShowTransactionForm(true)}
-          style={{
-            padding: "8px 16px",
-            backgroundColor: "#333",
-            color: "white",
-            border: "none",
-            borderRadius: "4px",
-            cursor: "pointer",
-          }}
         >
           New Txn
-        </button>
+        </Button>
       </div>
 
-      {showTransactionForm && (
-        <form onSubmit={handleSubmit} style={{ marginBottom: "20px" }}>
-          <div style={{ display: "grid", gap: "10px", maxWidth: "500px" }}>
-            <input
-              type="text"
-              value={newTransaction.counterParty}
-              onChange={(e) =>
-                setNewTransaction({
-                  ...newTransaction,
-                  counterParty: e.target.value,
-                })
-              }
-              placeholder="Counterparty"
-            />
-            <input
-              type="number"
-              value={newTransaction.amount}
-              onChange={(e) =>
-                setNewTransaction({ ...newTransaction, amount: e.target.value })
-              }
-              placeholder="Amount"
-            />
-            <input
-              type="text"
-              value={newTransaction.details.txHash}
-              onChange={(e) =>
-                setNewTransaction({
-                  ...newTransaction,
-                  details: {
-                    ...newTransaction.details,
-                    txHash: e.target.value,
-                  },
-                })
-              }
-              placeholder="Transaction Hash"
-            />
-            <input
-              type="text"
-              value={newTransaction.details.token}
-              onChange={(e) =>
-                setNewTransaction({
-                  ...newTransaction,
-                  details: { ...newTransaction.details, token: e.target.value },
-                })
-              }
-              placeholder="Token"
-            />
-            <input
-              type="number"
-              value={newTransaction.details.blockNumber}
-              onChange={(e) =>
-                setNewTransaction({
-                  ...newTransaction,
-                  details: {
-                    ...newTransaction.details,
-                    blockNumber: e.target.value,
-                  },
-                })
-              }
-              placeholder="Block Number"
-            />
-            <button type="submit">Submit Transaction</button>
-            <button type="button" onClick={() => setShowTransactionForm(false)}>
-              Cancel
-            </button>
+      {/* Import Transactions Modal */}
+      {showImportModal && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 1000,
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: "white",
+              padding: "32px",
+              borderRadius: "8px",
+              width: "500px",
+            }}
+          >
+            <div style={{ marginBottom: "24px" }}>
+              <h2>Import Transactions</h2>
+            </div>
+
+            <form onSubmit={handleImportSubmit}>
+              <div style={{ marginBottom: "24px" }}>
+                <label style={{ display: "block", marginBottom: "8px" }}>
+                  Ethereum Address
+                </label>
+                <input
+                  type="text"
+                  placeholder="Enter Ethereum address"
+                  value={ethereumAddress}
+                  onChange={(e) => setEthereumAddress(e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "8px",
+                    border: "1px solid #ddd",
+                    borderRadius: "4px",
+                  }}
+                />
+              </div>
+
+              <div style={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowImportModal(false);
+                    setEthereumAddress("");
+                  }}
+                  style={{
+                    padding: "8px 16px",
+                    backgroundColor: "#f3f4f6",
+                    color: "#333",
+                    border: "none",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  style={{
+                    padding: "8px 16px",
+                    backgroundColor: "#333",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                  }}
+                >
+                  Submit
+                </button>
+              </div>
+            </form>
           </div>
-        </form>
+        </div>
+      )}
+
+      {/* New Transaction Modal */}
+      {showTransactionForm && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 1000,
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: "white",
+              padding: "32px",
+              borderRadius: "8px",
+              width: "500px",
+            }}
+          >
+            <div style={{ marginBottom: "24px" }}>
+              <h2>New Transaction</h2>
+            </div>
+
+            <form onSubmit={handleSubmit}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "16px", marginBottom: "24px" }}>
+                <div>
+                  <label style={{ display: "block", marginBottom: "8px" }}>
+                    Counterparty
+                  </label>
+                  <input
+                    type="text"
+                    value={newTransaction.counterParty}
+                    onChange={(e) =>
+                      setNewTransaction({
+                        ...newTransaction,
+                        counterParty: e.target.value,
+                      })
+                    }
+                    placeholder="Enter counterparty address"
+                    style={{
+                      width: "100%",
+                      padding: "8px",
+                      border: "1px solid #ddd",
+                      borderRadius: "4px",
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: "block", marginBottom: "8px" }}>
+                    Amount
+                  </label>
+                  <input
+                    type="number"
+                    value={newTransaction.amount}
+                    onChange={(e) =>
+                      setNewTransaction({ ...newTransaction, amount: e.target.value })
+                    }
+                    placeholder="Enter amount"
+                    style={{
+                      width: "100%",
+                      padding: "8px",
+                      border: "1px solid #ddd",
+                      borderRadius: "4px",
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: "block", marginBottom: "8px" }}>
+                    Transaction Hash
+                  </label>
+                  <input
+                    type="text"
+                    value={newTransaction.details.txHash}
+                    onChange={(e) =>
+                      setNewTransaction({
+                        ...newTransaction,
+                        details: {
+                          ...newTransaction.details,
+                          txHash: e.target.value,
+                        },
+                      })
+                    }
+                    placeholder="Enter transaction hash"
+                    style={{
+                      width: "100%",
+                      padding: "8px",
+                      border: "1px solid #ddd",
+                      borderRadius: "4px",
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: "block", marginBottom: "8px" }}>
+                    Token
+                  </label>
+                  <input
+                    type="text"
+                    value={newTransaction.details.token}
+                    onChange={(e) =>
+                      setNewTransaction({
+                        ...newTransaction,
+                        details: { ...newTransaction.details, token: e.target.value },
+                      })
+                    }
+                    placeholder="Enter token"
+                    style={{
+                      width: "100%",
+                      padding: "8px",
+                      border: "1px solid #ddd",
+                      borderRadius: "4px",
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: "block", marginBottom: "8px" }}>
+                    Block Number
+                  </label>
+                  <input
+                    type="number"
+                    value={newTransaction.details.blockNumber}
+                    onChange={(e) =>
+                      setNewTransaction({
+                        ...newTransaction,
+                        details: {
+                          ...newTransaction.details,
+                          blockNumber: e.target.value,
+                        },
+                      })
+                    }
+                    placeholder="Enter block number"
+                    style={{
+                      width: "100%",
+                      padding: "8px",
+                      border: "1px solid #ddd",
+                      borderRadius: "4px",
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}>
+                <button
+                  type="button"
+                  onClick={() => setShowTransactionForm(false)}
+                  style={{
+                    padding: "8px 16px",
+                    backgroundColor: "#f3f4f6",
+                    color: "#333",
+                    border: "none",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  style={{
+                    padding: "8px 16px",
+                    backgroundColor: "#333",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                  }}
+                >
+                  Submit
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
 
       <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -262,8 +470,8 @@ export default function Editor(props: IProps) {
           </tr>
         </thead>
         <tbody>
-          {transactions.map((tx) => (
-            <tr key={tx.id} style={{ borderBottom: "1px solid #eee" }}>
+          {transactions.map((tx, index) => (
+            <tr key={index} style={{ borderBottom: "1px solid #eee" }}>
               <td style={{ padding: "12px 8px", color: "#0066cc" }}>
                 {tx.details.txHash.substring(0, 10)}...
               </td>
