@@ -31,10 +31,10 @@ export function EditorLayout({
     useDriveContext();
 
   // Add debugging
-  console.log("EditorLayout - driveId:", driveId);
-  console.log("EditorLayout - context:", context);
-  console.log("EditorLayout - documentModels:", documentModels);
-  console.log("EditorLayout - useDriveContext:", useDriveContext());
+  // console.log("EditorLayout - driveId:", driveId);
+  // console.log("EditorLayout - context:", context);
+  // console.log("EditorLayout - documentModels:", documentModels);
+  // console.log("EditorLayout - useDriveContext:", useDriveContext());
 
   const [activeNodeId, setActiveNodeId] = useState<string | undefined>();
   const [openModal, setOpenModal] = useState(false);
@@ -75,7 +75,7 @@ export function EditorLayout({
     (docModel) => docModel.documentModel.id !== "powerhouse/document-model"
   );
 
-  console.log("EditorLayout - filteredDocumentModels:", filteredDocumentModels);
+  // console.log("EditorLayout - filteredDocumentModels:", filteredDocumentModels);
 
   return (
     <main className="flex overflow-hidden h-full">

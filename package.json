@@ -42,6 +42,7 @@
     "generate": "ph-cli generate",
     "connect": "ph-cli connect",
     "reactor": "ph-cli reactor",
+    "script:apply-changes": "bun run ./scripts/apply-changes.ts",
     "service": "ph-cli service",
     "service-startup": "bash ./node_modules/@powerhousedao/ph-cli/dist/scripts/service-startup.sh",
     "service-unstartup": "bash ./node_modules/@powerhousedao/ph-cli/dist/scripts/service-unstartup.sh"
@@ -52,6 +53,7 @@
     "error": "^10.4.0",
     "graphql": "^16.10.0",
     "graphql-tag": "^2.12.6",
+    "graphql-ts-client": "^10.4.0",
     "zod": "^3.24.2"
   },
   "devDependencies": {

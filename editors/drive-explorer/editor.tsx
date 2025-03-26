@@ -14,10 +14,11 @@ export type IProps = EditorProps<DocumentDriveDocument>;
 
 export default function Editor(props: IProps) {
   // Add debugging logs
-  console.log("DriveExplorer props:", props);
-  console.log("DriveExplorer document:", props.document);
-  console.log("DriveExplorer context:", props.context);
+  // console.log("DriveExplorer props:", props);
+  // console.log("DriveExplorer document:", props.document);
+  // console.log("DriveExplorer context:", props.context);
 
+  console.log('props.document.state.global.nodes', props.document.state.global.nodes)
   return (
     <div className="finances-drive-explorer" style={{ height: "100%" }}>
       <EditorLayout
