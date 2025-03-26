@@ -1,8 +1,16 @@
 import { useCallback, useState, useRef, useMemo } from "react";
-import { UiNode, useDriveContext } from "@powerhousedao/reactor-browser";
+import {
+  UiFileNode,
+  UiNode,
+  useDriveContext,
+} from "@powerhousedao/reactor-browser";
 import { EditorContainer } from "./editor-container.js";
 import { type DocumentModelModule, type EditorContext } from "document-model";
-import { Button, CreateDocumentModal } from "@powerhousedao/design-system";
+import {
+  Button,
+  CreateDocumentModal,
+  FileItem,
+} from "@powerhousedao/design-system";
 import { CreateDocument } from "./create-document.js";
 import type { Node } from "document-drive";
 
@@ -48,14 +56,14 @@ export function EditorLayout({
       const node = await addDocument(
         driveId,
         fileName,
-        documentModel.documentModel.id,
+        documentModel.documentModel.id
       );
 
       selectedDocumentModel.current = null;
       await fetchDocuments(driveId, [node.id]);
       setActiveNodeId(node.id);
     },
-    [addDocument, driveId, setActiveNodeId],
+    [addDocument, driveId, setActiveNodeId]
   );
 
   const onSelectDocumentModel = (documentModel: DocumentModelModule) => {
@@ -64,7 +72,7 @@ export function EditorLayout({
   };
 
   const filteredDocumentModels = documentModels.filter(
-    (docModel) => docModel.documentModel.id !== "powerhouse/document-model",
+    (docModel) => docModel.documentModel.id !== "powerhouse/document-model"
   );
 
   console.log("EditorLayout - filteredDocumentModels:", filteredDocumentModels);
@@ -73,28 +81,7 @@ export function EditorLayout({
     <main className="flex overflow-hidden h-full">
       <div className="flex-1 bg-gray-50 p-4 dark:bg-slate-800">
         <>
-          {activeNodeId && (
-            <EditorContainer
-              context={context}
-              documentId={activeNodeId}
-              documentType={state[activeNodeId].documentType}
-              driveId={driveId}
-              key={activeNodeId}
-              onClose={onEditorClose}
-              title={"Financial Documents"}
-            />
-          )}
           <h1 className="text-xl font-bold mb-4">Finances Explorer</h1>
-          {driveNodes.map((node) => (
-            <Button
-              key={node.id}
-              onClick={() => {
-                setActiveNodeId(node.id);
-              }}
-            >
-              {node.name}
-            </Button>
-          ))}
           <p className="mb-4">Welcome to your financial documents drive.</p>
           <CreateDocument
             /* @ts-expect-error */
@@ -107,6 +94,32 @@ export function EditorLayout({
             onOpenChange={(open) => setOpenModal(open)}
             open={openModal}
           />
+          <div className="flex gap-2 mt-4">
+            {driveNodes.map((node) => (
+              <Button
+                size="small"
+                key={node.id}
+                onClick={() => {
+                  setActiveNodeId(node.id);
+                }}
+              >
+                {node.name}
+              </Button>
+            ))}
+          </div>
+          <div className="flex-1 mt-4">
+            {activeNodeId && (
+              <EditorContainer
+                context={context}
+                documentId={activeNodeId}
+                documentType={state[activeNodeId].documentType}
+                driveId={driveId}
+                key={activeNodeId}
+                onClose={onEditorClose}
+                title={""}
+              />
+            )}
+          </div>
         </>
       </div>
     </main>
