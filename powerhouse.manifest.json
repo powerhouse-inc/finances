@@ -1,35 +1,35 @@
 {
-    "name": "powerhouse/finances",
-    "description": "Financial management and tracking tools",
-    "category": "Finance",
-    "publisher": {
-        "name": "Powerhouse",
-        "url": "https://www.powerhouse.inc/"
+  "name": "powerhouse/finances",
+  "description": "Financial management and tracking tools",
+  "category": "Finance",
+  "publisher": {
+    "name": "Powerhouse",
+    "url": "https://www.powerhouse.inc/"
+  },
+  "documentModels": [
+    {
+      "id": "powerhouse/document-drive",
+      "name": "Document Drive"
     },
-    "documentModels": [
-        {
-            "id": "powerhouse/document-drive",
-            "name": "Document Drive"
-        },
-        {
-            "id": "powerhouse/finances",
-            "name": "Finances Document"
-        }
-    ],
-    "editors": [
-        {
-            "id": "FinancesDriveExplorer",
-            "name": "Finances Drive Explorer",
-            "documentTypes": [
-                "powerhouse/document-drive"
-            ]
-        }
-    ],
-    "apps": [
-        {
-            "id": "powerhouse/finances-drive-explorer",
-            "name": "Finances App",
-            "driveEditor": "FinancesDriveExplorer"
-        }
-    ]
+    {
+      "id": "powerhouse/finances",
+      "name": "Finances Document"
+    }
+  ],
+  "editors": [
+    {
+      "id": "FinancesDriveExplorer",
+      "name": "Finances Drive Explorer",
+      "documentTypes": ["powerhouse/document-drive"]
+    }
+  ],
+  "subgraphs": [],
+  "importScripts": [],
+  "apps": [
+    {
+      "id": "powerhouse/finances-drive-explorer",
+      "name": "Finances App",
+      "driveEditor": "FinancesDriveExplorer"
+    }
+  ]
 }

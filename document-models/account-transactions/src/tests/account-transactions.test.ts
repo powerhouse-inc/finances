@@ -4,19 +4,17 @@
  */
 
 import { generateMock } from "@powerhousedao/codegen";
-import { utils as documentModelUtils } from "document-model";
-
-import utils from "../../gen/utils";
+import utils from "../../gen/utils.js";
 import {
   z,
-  CreateTransactionInput,
-  UpdateTransactionInput,
-  DeleteTransactionInput,
-  UpdateTransactionBudgetInput,
-} from "../../gen/schema";
-import { reducer } from "../../gen/reducer";
-import * as creators from "../../gen/account-transactions/creators";
-import { AccountTransactionsDocument } from "../../gen/types";
+  type CreateTransactionInput,
+  type UpdateTransactionInput,
+  type DeleteTransactionInput,
+  type UpdateTransactionBudgetInput,
+} from "../../gen/schema/index.js";
+import { reducer } from "../../gen/reducer.js";
+import * as creators from "../../gen/account-transactions/creators.js";
+import type { AccountTransactionsDocument } from "../../gen/types.js";
 
 describe("AccountTransactions Operations", () => {
   let document: AccountTransactionsDocument;

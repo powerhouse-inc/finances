@@ -1,3 +1,3 @@
-export { module as Accounts } from "./accounts";
-export { module as AccountTransactions } from "./account-transactions";
-export { module as FinancesDriveExplorer } from "./drive-explorer";
+export { module as Accounts } from "./accounts/index.js";
+export { module as AccountTransactions } from "./account-transactions/index.js";
+export { module as FinancesDriveExplorer } from "./drive-explorer/index.js";

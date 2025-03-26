@@ -1,11 +1,10 @@
-import { EditorProps, hashKey } from "document-model";
+import { type EditorProps, hashKey } from "document-model";
 import {
-  AccountTransactionsDocument,
+  type AccountTransactionsDocument,
   actions,
-} from "../../document-models/account-transactions";
+} from "../../document-models/account-transactions/index.js";
 import { useState, useEffect } from "react";
-import { formatTokenAmount, getTokenSymbol } from "./utils";
-import styles from "./editor.module.css";
+import { formatTokenAmount, getTokenSymbol } from "./utils.js";
 
 export type IProps = EditorProps<AccountTransactionsDocument>;
 

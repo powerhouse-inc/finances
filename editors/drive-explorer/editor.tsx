@@ -20,47 +20,13 @@ export default function Editor(props: IProps) {
 
   return (
     <div className="finances-drive-explorer" style={{ height: "100%" }}>
-      <WagmiContext>
-        <DriveContextProvider
-          value={{
-            documentModels: documentModels as DocumentModelModule[],
-            useDriveDocumentStates: () => [{}, async () => {}],
-            addDocument: async () =>
-              ({
-                id: "",
-                documentType: "",
-                kind: "file",
-                name: "",
-                parentFolder: "",
-                synchronizationUnits: [],
-              }) as FileNode,
-            useDocumentEditorProps: () => ({
-              dispatch: () => {},
-              error: null,
-              document: undefined as PHDocument | undefined,
-            }),
-            showSearchBar: false,
-            isAllowedToCreateDocuments: true,
-            selectedNode: null,
-            selectNode: () => {},
-            addFile: async () => {
-              return;
-            },
-            showCreateDocumentModal: async () => ({ name: "" }),
-            useSyncStatus: () => "UNCHANGED" as SyncStatus,
-            useDriveDocumentState: () => ({
-              global: {},
-              local: {},
-            }),
-          }}
-        >
-          <EditorLayout
-            context={props.context}
-            driveId={props.document.state.global.id}
-            nodes={props.document.state.global.nodes}
-          >
-            <style>
-              {`
+      <EditorLayout
+        context={props.context}
+        driveId={props.document.state.global.id}
+        nodes={props.document.state.global.nodes}
+      >
+        <style>
+          {`
                 .finances-drive-explorer-header {
                   margin-bottom: 1em;
                 }
@@ -76,10 +42,8 @@ export default function Editor(props: IProps) {
                   right: 0;
                   top: 16px;
                 }`}
-            </style>
-          </EditorLayout>
-        </DriveContextProvider>
-      </WagmiContext>
+        </style>
+      </EditorLayout>
     </div>
   );
 }

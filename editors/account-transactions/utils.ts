@@ -1,4 +1,4 @@
-import { ethers, BigNumberish } from "ethers";
+import { ethers, type BigNumberish } from "ethers";
 
 // Hardcoded provider using Tenderly gateway
 const provider = new ethers.JsonRpcProvider();

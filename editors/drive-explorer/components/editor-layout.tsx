@@ -1,8 +1,8 @@
 import { useCallback, useState, useRef, useMemo } from "react";
-import { useDriveContext } from "@powerhousedao/reactor-browser";
+import { UiNode, useDriveContext } from "@powerhousedao/reactor-browser";
 import { EditorContainer } from "./editor-container.js";
 import { type DocumentModelModule, type EditorContext } from "document-model";
-import { CreateDocumentModal } from "@powerhousedao/design-system";
+import { Button, CreateDocumentModal } from "@powerhousedao/design-system";
 import { CreateDocument } from "./create-document.js";
 import type { Node } from "document-drive";
 
@@ -19,7 +19,7 @@ export function EditorLayout({
   context,
   nodes: driveNodes,
 }: EditorLayoutProps) {
-  const { useDriveDocumentStates, addDocument, documentModels } =
+  const { useDriveDocumentStates, addDocument, documentModels, selectNode } =
     useDriveContext();
 
   // Add debugging
@@ -85,6 +85,16 @@ export function EditorLayout({
             />
           )}
           <h1 className="text-xl font-bold mb-4">Finances Explorer</h1>
+          {driveNodes.map((node) => (
+            <Button
+              key={node.id}
+              onClick={() => {
+                setActiveNodeId(node.id);
+              }}
+            >
+              {node.name}
+            </Button>
+          ))}
           <p className="mb-4">Welcome to your financial documents drive.</p>
           <CreateDocument
             /* @ts-expect-error */

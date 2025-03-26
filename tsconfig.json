@@ -1,29 +1,26 @@
 {
-    "compilerOptions": {
-        "target": "ESNext",
-        "module": "ESNext",
-        "moduleResolution": "Bundler",
-        "types": ["node", "vitest/globals"],
-        "declaration": false,
-        "outDir": "./dist",
-        "allowSyntheticDefaultImports": true,
-        "esModuleInterop": true,
-        "forceConsistentCasingInFileNames": true,
-        "strict": true,
-        "noImplicitAny": true,
-        "skipLibCheck": true,
-        "jsx": "react-jsx",
-        "lib": ["ESNext", "dom", "dom.iterable"],
-        "baseUrl": "./",
-        "allowJs": true,
-    },
-    "include": [
-        "./index.ts",
-        "**/*.ts",
-        "**/*.tsx",
-        "*.config.js",
-        "*.config.ts",
-        ".storybook/**/*",
-    ],
-    "exclude": ["dist/", "node_modules"],
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "outDir": "./dist",
+    "declaration": true,
+    "declarationMap": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "isolatedModules": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "jsx": "react-jsx",
+    "types": ["vitest/globals"],
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "paths": {
+      "document-models/*": ["./document-models/*"],
+      "editors/*": ["./editors/*"]
+    }
+  },
+  "include": ["**/*"],
+  "exclude": ["dist", "node_modules"]
 }

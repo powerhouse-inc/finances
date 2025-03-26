@@ -4,18 +4,16 @@
  */
 
 import { generateMock } from "@powerhousedao/codegen";
-import { utils as documentModelUtils } from "document-model";
-
-import utils from "../../gen/utils";
+import utils from "../../gen/utils.js";
 import {
   z,
-  CreateAccountInput,
-  UpdateAccountInput,
-  DeleteAccountInput,
-} from "../../gen/schema";
-import { reducer } from "../../gen/reducer";
-import * as creators from "../../gen/accounts/creators";
-import { AccountsDocument } from "../../gen/types";
+  type CreateAccountInput,
+  type UpdateAccountInput,
+  type DeleteAccountInput,
+} from "../../gen/schema/index.js";
+import { reducer } from "../../gen/reducer.js";
+import * as creators from "../../gen/accounts/creators.js";
+import type { AccountsDocument } from "../../gen/types.js";
 
 describe("Accounts Operations", () => {
   let document: AccountsDocument;

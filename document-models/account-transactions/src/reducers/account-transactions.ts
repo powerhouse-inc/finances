@@ -4,7 +4,7 @@
  * - delete the file and run the code generator again to have it reset
  */
 
-import { AccountTransactionsAccountTransactionsOperations } from "../../gen/account-transactions/operations";
+import type { AccountTransactionsAccountTransactionsOperations } from "../../gen/account-transactions/operations.js";
 
 export const reducer: AccountTransactionsAccountTransactionsOperations = {
   createTransactionOperation(state, action, dispatch) {
@@ -16,12 +16,14 @@ export const reducer: AccountTransactionsAccountTransactionsOperations = {
       amount: action.input.amount,
       datetime: action.input.datetime,
       details: action.input.details,
-      budget: action.input.budget
+      budget: action.input.budget,
     });
   },
 
   updateTransactionOperation(state, action, dispatch) {
-    const transaction = state.transactions.find(tx => tx.id === action.input.id);
+    const transaction = state.transactions.find(
+      (tx) => tx.id === action.input.id,
+    );
     if (!transaction) {
       throw new Error(`Transaction with id ${action.input.id} not found`);
     }
@@ -49,17 +51,23 @@ export const reducer: AccountTransactionsAccountTransactionsOperations = {
 
   deleteTransactionOperation(state, action, dispatch) {
     // Verify transaction exists before deletion
-    const transaction = state.transactions.find(tx => tx.id === action.input.id);
+    const transaction = state.transactions.find(
+      (tx) => tx.id === action.input.id,
+    );
     if (!transaction) {
       throw new Error(`Transaction with id ${action.input.id} not found`);
     }
 
     // Remove transaction from the transactions array
-    state.transactions = state.transactions.filter(tx => tx.id !== action.input.id);
+    state.transactions = state.transactions.filter(
+      (tx) => tx.id !== action.input.id,
+    );
   },
 
   updateTransactionBudgetOperation(state, action, dispatch) {
-    const transaction = state.transactions.find(tx => tx.id === action.input.txId);
+    const transaction = state.transactions.find(
+      (tx) => tx.id === action.input.txId,
+    );
     if (!transaction) {
       throw new Error(`Transaction with id ${action.input.txId} not found`);
     }

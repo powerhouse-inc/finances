@@ -1,10 +1,10 @@
-import { EditorProps, hashKey } from "document-model";
+import { type EditorProps, hashKey } from "document-model";
 import {
-  AccountsDocument,
-  AccountType,
+  type AccountsDocument,
+  type AccountType,
   actions,
-} from "../../document-models/accounts";
-import { AccountEntry as BaseAccountEntry } from "../../document-models/accounts/gen/types";
+} from "../../document-models/accounts/index.js";
+import { type AccountEntry as BaseAccountEntry } from "../../document-models/accounts/gen/types.js";
 import { useState } from "react";
 
 type AccountEntry = BaseAccountEntry & {
