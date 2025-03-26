@@ -4,7 +4,7 @@ import {
   actions,
 } from "../../document-models/account-transactions/index.js";
 import { useState, useEffect } from "react";
-import { Button } from "@powerhousedao/design-system"
+import { Button } from "@powerhousedao/design-system";
 
 export type IProps = EditorProps<AccountTransactionsDocument>;
 
@@ -170,18 +170,14 @@ export default function Editor(props: IProps) {
         }}
       >
         <h3>Transaction Management</h3>
-        <Button
-          size="small"
-          onClick={() => setShowImportModal(true)}
-        >
-          Import Transactions
-        </Button>
-        <Button
-          size="small"
-          onClick={() => setShowTransactionForm(true)}
-        >
-          New Txn
-        </Button>
+        <div style={{ display: "flex", gap: "12px" }}>
+          <Button size="small" onClick={() => setShowImportModal(true)}>
+            Import Transactions
+          </Button>
+          <Button size="small" onClick={() => setShowTransactionForm(true)}>
+            New Txn
+          </Button>
+        </div>
       </div>
 
       {/* Import Transactions Modal */}
@@ -231,7 +227,13 @@ export default function Editor(props: IProps) {
                 />
               </div>
 
-              <div style={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}>
+              <div
+                style={{
+                  display: "flex",
+                  gap: "12px",
+                  justifyContent: "flex-end",
+                }}
+              >
                 <button
                   type="button"
                   onClick={() => {
@@ -297,7 +299,14 @@ export default function Editor(props: IProps) {
             </div>
 
             <form onSubmit={handleSubmit}>
-              <div style={{ display: "flex", flexDirection: "column", gap: "16px", marginBottom: "24px" }}>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "16px",
+                  marginBottom: "24px",
+                }}
+              >
                 <div>
                   <label style={{ display: "block", marginBottom: "8px" }}>
                     Counterparty
@@ -329,7 +338,10 @@ export default function Editor(props: IProps) {
                     type="number"
                     value={newTransaction.amount}
                     onChange={(e) =>
-                      setNewTransaction({ ...newTransaction, amount: e.target.value })
+                      setNewTransaction({
+                        ...newTransaction,
+                        amount: e.target.value,
+                      })
                     }
                     placeholder="Enter amount"
                     style={{
@@ -377,7 +389,10 @@ export default function Editor(props: IProps) {
                     onChange={(e) =>
                       setNewTransaction({
                         ...newTransaction,
-                        details: { ...newTransaction.details, token: e.target.value },
+                        details: {
+                          ...newTransaction.details,
+                          token: e.target.value,
+                        },
                       })
                     }
                     placeholder="Enter token"
@@ -417,7 +432,13 @@ export default function Editor(props: IProps) {
                 </div>
               </div>
 
-              <div style={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}>
+              <div
+                style={{
+                  display: "flex",
+                  gap: "12px",
+                  justifyContent: "flex-end",
+                }}
+              >
                 <button
                   type="button"
                   onClick={() => setShowTransactionForm(false)}

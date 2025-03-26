@@ -61,6 +61,10 @@ export default function Editor(props: IProps) {
     });
   };
 
+  const trackTransactions = () => {
+    console.log("Tracking transactions");
+  };
+
   return (
     <div style={{ padding: "20px" }}>
       <div
@@ -72,19 +76,36 @@ export default function Editor(props: IProps) {
         }}
       >
         <h1>Account Management</h1>
-        <button
-          onClick={() => setShowCreateForm(true)}
-          style={{
-            padding: "8px 16px",
-            backgroundColor: "#007bff",
-            color: "white",
-            border: "none",
-            borderRadius: "4px",
-            cursor: "pointer",
-          }}
-        >
-          Create Account
-        </button>
+        <div style={{ display: "flex", gap: "12px" }}>
+          <button
+            onClick={() => trackTransactions()}
+            style={{
+              padding: "8px 16px",
+              backgroundColor: "grey",
+              color: "white",
+              border: "none",
+              borderRadius: "4px",
+              cursor: "pointer",
+              fontSize: "12px",
+            }}
+          >
+            Track Transactions
+          </button>
+          <button
+            onClick={() => setShowCreateForm(true)}
+            style={{
+              padding: "8px 16px",
+              backgroundColor: "#007bff",
+              color: "white",
+              border: "none",
+              borderRadius: "4px",
+              cursor: "pointer",
+              fontSize: "12px",
+            }}
+          >
+            Create Account
+          </button>
+        </div>
       </div>
 
       <div style={{ marginBottom: "20px" }}>
@@ -97,6 +118,8 @@ export default function Editor(props: IProps) {
           width: "100%",
           overflowX: "auto",
           whiteSpace: "nowrap",
+          borderRadius: "8px",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
         }}
       >
         {/* Table Header */}
@@ -109,6 +132,7 @@ export default function Editor(props: IProps) {
             padding: "12px",
             borderBottom: "1px solid #eee",
             fontWeight: "bold",
+            backgroundColor: "#f8f9fa",
           }}
         >
           <div style={{ textAlign: "left" }}>Name</div>
@@ -217,6 +241,7 @@ export default function Editor(props: IProps) {
                 border: "none",
                 borderRadius: "4px",
                 cursor: "pointer",
+                width: "80px",
               }}
             >
               Delete
