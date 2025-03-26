@@ -48,7 +48,7 @@ export default function Editor(props: IProps) {
       actions.createAccount({
         id: hashKey(),
         ...newAccount,
-      }),
+      })
     );
     setNewAccount({
       name: "",
@@ -122,7 +122,7 @@ export default function Editor(props: IProps) {
         </div>
 
         {/* Table Body */}
-        {state.accounts.map((account: AccountEntry) => (
+        {state.accounts.map((account: BaseAccountEntry) => (
           <div
             key={account.id}
             style={{

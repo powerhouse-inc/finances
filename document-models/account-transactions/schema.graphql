@@ -15,37 +15,42 @@ scalar Amount_Currency
 scalar Amount_Crypto
 scalar Amount
 type AccountTransactionsState {
+  account: AgentLink
   transactions: [TransactionEntry!]!
   budgets: [Budget!]!
 }
 
 type TransactionEntry {
   id: ID!
-  fromAccount: EthereumAddress
-  toAccount: EthereumAddress
-  amount: Amount_Money!
+  counterParty: EthereumAddress
+  amount: Amount_Tokens!
   datetime: DateTime!
   details: TransactionDetails!
   budget: OID
 }
 
-union TransactionDetails = CryptoTransactionDetails | BankTransactionDetails
-
-type CryptoTransactionDetails {
+type TransactionDetails {
   txHash: String!
   token: Currency!
   blockNumber: Int
 }
 
-type BankTransactionDetails {
-  currency: Currency!
-  transactionId: String
-  referenceNumber: String
-}
-
 type Budget {
   id: OID!
   name: OLabel
+}
+
+type AgentLink {
+  id: PHID!
+  username: String
+  type: AgentType
+  icon: URL
+}
+
+enum AgentType {
+  CONTRIBUTOR
+  TEAM
+  AI
 }
 
 
@@ -54,8 +59,7 @@ type Budget {
 # account_transactions
 
 input CreateTransactionInput {
-  fromAccount: EthereumAddress
-  toAccount: EthereumAddress
+  counterParty: EthereumAddress
   amount: Amount_Money!
   datetime: DateTime!
   details: TransactionDetailsInput!
@@ -63,20 +67,9 @@ input CreateTransactionInput {
 }
 
 input TransactionDetailsInput {
-  crypto: CryptoTransactionDetailsInput
-  bank: BankTransactionDetailsInput
-}
-
-input CryptoTransactionDetailsInput {
   txHash: String!
   token: Currency!
   blockNumber: Int
-}
-
-input BankTransactionDetailsInput {
-  currency: Currency!
-  transactionId: String
-  referenceNumber: String
 }
 
 input Budget {
@@ -85,8 +78,7 @@ input Budget {
 }
 
 input UpdateTransactionInput {
-  fromAccount: EthereumAddress
-  toAccount: EthereumAddress
+  counterParty: EthereumAddress
   amount: Amount_Money
   datetime: DateTime
   details: TransactionDetailsInput
@@ -94,20 +86,9 @@ input UpdateTransactionInput {
 }
 
 input TransactionDetailsInput {
-  crypto: CryptoTransactionDetailsInput
-  bank: BankTransactionDetailsInput
-}
-
-input CryptoTransactionDetailsInput {
   txHash: String
   token: Currency
   blockNumber: Int
-}
-
-input BankTransactionDetailsInput {
-  currency: Currency
-  transactionId: String
-  referenceNumber: String
 }
 
 input Budget {
@@ -122,4 +103,8 @@ input DeleteTransactionInput {
 input UpdateTransactionBudgetInput {
   txId: ID!,
   budgetId: OID!
+}
+
+input UpdateAccountInput {
+  account: String
 }

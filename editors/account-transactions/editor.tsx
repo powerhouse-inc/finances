@@ -10,16 +10,15 @@ export type IProps = EditorProps<AccountTransactionsDocument>;
 
 export default function Editor(props: IProps) {
   const { document, dispatch } = props;
-  const {
-    state: { global: state },
-  } = document;
+  const { state } = document;
+  const transactions = state.global?.transactions || [];
+  const account = state.global?.account;
 
-  const [transactionType, setTransactionType] = useState<"crypto" | "bank">(
-    "crypto",
-  );
+  const [hasEditedAccount, setHasEditedAccount] = useState(false);
+  const [newUsername, setNewUsername] = useState(account?.username || "");
+
   const [newTransaction, setNewTransaction] = useState({
-    fromAccount: "",
-    toAccount: "",
+    counterParty: "",
     amount: "",
     details: {
       txHash: "",
@@ -28,414 +27,294 @@ export default function Editor(props: IProps) {
     },
   });
 
-  const [editingBudget, setEditingBudget] = useState<{
-    transactionId: string;
-    budget: string;
-  } | null>(null);
+  const [showTransactionForm, setShowTransactionForm] = useState(false);
 
-  const [tokenSymbols, setTokenSymbols] = useState<Record<string, string>>({});
-  const [formattedAmounts, setFormattedAmounts] = useState<
-    Record<string, string>
-  >({});
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-  useEffect(() => {
-    console.log("State updated:", state?.transactions);
-  }, [state?.transactions]);
-
-  const handleCreateTransaction = () => {
-    const details =
-      transactionType === "crypto"
-        ? {
-            __typename: "CryptoTransactionDetails" as const,
+    try {
+      await dispatch(
+        actions.createTransaction({
+          counterParty: newTransaction.counterParty,
+          amount: parseFloat(newTransaction.amount),
+          datetime: new Date().toISOString(),
+          details: {
             txHash: newTransaction.details.txHash,
             token: newTransaction.details.token,
-            blockNumber: parseInt(newTransaction.details.blockNumber),
-          }
-        : {
-            __typename: "BankTransactionDetails" as const,
-            currency: newTransaction.details.token,
-            transactionId: newTransaction.details.txHash,
-            referenceNumber: newTransaction.details.blockNumber,
-          };
+            blockNumber: parseInt(newTransaction.details.blockNumber) || null,
+          },
+        })
+      );
 
-    dispatch(
-      actions.createTransaction({
-        id: hashKey(),
-        fromAccount: newTransaction.fromAccount,
-        toAccount: newTransaction.toAccount,
-        amount: parseFloat(newTransaction.amount),
-        datetime: new Date().toISOString(),
-        details,
-      }),
-    );
-
-    setNewTransaction({
-      fromAccount: "",
-      toAccount: "",
-      amount: "",
-      details: {
-        txHash: "",
-        token: "",
-        blockNumber: "",
-      },
-    });
+      setNewTransaction({
+        counterParty: "",
+        amount: "",
+        details: {
+          txHash: "",
+          token: "",
+          blockNumber: "",
+        },
+      });
+    } catch (error) {
+      console.error("Error creating transaction:", error);
+    }
   };
 
-  const handleUpdateBudget = (transactionId: string) => {
-    if (!editingBudget?.budget) return;
+  const handleUpdateAccount = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (hasEditedAccount) return;
 
-    dispatch(
-      actions.updateTransactionBudget({
-        txId: transactionId,
-        budgetId: editingBudget.budget,
-      }),
-    );
-
-    setEditingBudget(null);
-  };
-
-  const getSortedTransactions = () => {
-    if (!state?.transactions) return [];
-    return [...state.transactions].sort(
-      (a, b) => new Date(b.datetime).getTime() - new Date(a.datetime).getTime(),
-    );
+    try {
+      await dispatch(
+        actions.updateAccount({
+          account: newUsername,
+        })
+      );
+      setHasEditedAccount(true);
+    } catch (error) {
+      console.error("Error updating account:", error);
+    }
   };
 
   return (
     <div style={{ padding: "20px" }}>
-      <h1 style={{ fontSize: "24px", marginBottom: "20px" }}>
-        Transactions Management
-      </h1>
-
-      {/* Create Transaction Form */}
-      <div
-        style={{
-          marginBottom: "20px",
-          padding: "20px",
-          border: "1px solid #ccc",
-          borderRadius: "4px",
-        }}
-      >
-        <h2 style={{ fontSize: "20px", marginBottom: "15px" }}>
-          Create New Transaction
-        </h2>
-        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-          <select
-            value={transactionType}
-            onChange={(e) =>
-              setTransactionType(e.target.value as "crypto" | "bank")
-            }
+      {/* Account Info */}
+      <div style={{ marginBottom: "24px" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "12px",
+            marginBottom: "8px",
+          }}
+        >
+          {account?.icon && (
+            <img
+              src={account.icon}
+              alt="Account icon"
+              style={{
+                width: "32px",
+                height: "32px",
+                borderRadius: "50%",
+              }}
+            />
+          )}
+          <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+            {account?.username && (
+              <span style={{ fontWeight: "500" }}>{account.username}</span>
+            )}
+            <form
+              onSubmit={handleUpdateAccount}
+              style={{ display: "flex", gap: "8px", alignItems: "center" }}
+            >
+              <input
+                type="text"
+                value={newUsername}
+                onChange={(e) => setNewUsername(e.target.value)}
+                disabled={hasEditedAccount}
+                placeholder="Enter username"
+                style={{
+                  padding: "4px 8px",
+                  borderRadius: "4px",
+                  border: "1px solid #ccc",
+                }}
+              />
+              {!hasEditedAccount && (
+                <button
+                  type="submit"
+                  style={{
+                    padding: "4px 8px",
+                    backgroundColor: "#333",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                  }}
+                >
+                  Update
+                </button>
+              )}
+            </form>
+          </div>
+          <span
             style={{
-              padding: "8px",
+              backgroundColor: "#f3f4f6",
+              padding: "4px 8px",
               borderRadius: "4px",
-              border: "1px solid #ccc",
+              fontSize: "14px",
             }}
           >
-            <option value="crypto">Crypto Transaction</option>
-            <option value="bank">Bank Transaction</option>
-          </select>
-
-          <input
-            type="text"
-            placeholder="From Account"
-            value={newTransaction.fromAccount}
-            onChange={(e) =>
-              setNewTransaction({
-                ...newTransaction,
-                fromAccount: e.target.value,
-              })
-            }
-            style={{
-              padding: "8px",
-              borderRadius: "4px",
-              border: "1px solid #ccc",
-            }}
-          />
-
-          <input
-            type="text"
-            placeholder="To Account"
-            value={newTransaction.toAccount}
-            onChange={(e) =>
-              setNewTransaction({
-                ...newTransaction,
-                toAccount: e.target.value,
-              })
-            }
-            style={{
-              padding: "8px",
-              borderRadius: "4px",
-              border: "1px solid #ccc",
-            }}
-          />
-
-          <input
-            type="number"
-            placeholder="Amount"
-            value={newTransaction.amount}
-            onChange={(e) =>
-              setNewTransaction({ ...newTransaction, amount: e.target.value })
-            }
-            style={{
-              padding: "8px",
-              borderRadius: "4px",
-              border: "1px solid #ccc",
-            }}
-          />
-
-          <input
-            type="text"
-            placeholder={
-              transactionType === "crypto"
-                ? "Transaction Hash"
-                : "Transaction ID"
-            }
-            value={newTransaction.details.txHash}
-            onChange={(e) =>
-              setNewTransaction({
-                ...newTransaction,
-                details: { ...newTransaction.details, txHash: e.target.value },
-              })
-            }
-            style={{
-              padding: "8px",
-              borderRadius: "4px",
-              border: "1px solid #ccc",
-            }}
-          />
-
-          <input
-            type="text"
-            placeholder={transactionType === "crypto" ? "Token" : "Currency"}
-            value={newTransaction.details.token}
-            onChange={(e) =>
-              setNewTransaction({
-                ...newTransaction,
-                details: { ...newTransaction.details, token: e.target.value },
-              })
-            }
-            style={{
-              padding: "8px",
-              borderRadius: "4px",
-              border: "1px solid #ccc",
-            }}
-          />
-
-          <input
-            type="text"
-            placeholder={
-              transactionType === "crypto" ? "Block Number" : "Reference Number"
-            }
-            value={newTransaction.details.blockNumber}
-            onChange={(e) =>
-              setNewTransaction({
-                ...newTransaction,
-                details: {
-                  ...newTransaction.details,
-                  blockNumber: e.target.value,
-                },
-              })
-            }
-            style={{
-              padding: "8px",
-              borderRadius: "4px",
-              border: "1px solid #ccc",
-            }}
-          />
-
-          <button
-            onClick={handleCreateTransaction}
-            style={{
-              padding: "8px 16px",
-              backgroundColor: "#007bff",
-              color: "white",
-              border: "none",
-              borderRadius: "4px",
-              cursor: "pointer",
-            }}
-          >
-            Create Transaction
-          </button>
+            {account?.type || "CONTRIBUTOR"}
+          </span>
         </div>
       </div>
 
-      {/* Transactions List */}
-      <div>
-        {getSortedTransactions().map((transaction) => (
-          <div
-            key={transaction.id}
-            className={styles.transactionItem}
-            style={{
-              padding: "15px",
-              border: "1px solid #ccc",
-              borderRadius: "4px",
-              marginBottom: "10px",
-            }}
-          >
-            <div>
-              <h3 style={{ fontWeight: "bold" }}>
-                {transaction.fromAccount} → {transaction.toAccount}
-              </h3>
-              <p style={{ fontSize: "14px" }}>
-                Amount: {formatTokenAmount(transaction.amount)}
-              </p>
-              <p style={{ fontSize: "14px" }}>
-                Date: {new Date(transaction.datetime).toLocaleString()}
-              </p>
-              <p style={{ fontSize: "14px" }}>
-                Type:{" "}
-                {Object.hasOwn(transaction.details, "crypto")
-                  ? "Crypto"
-                  : "Bank"}
-              </p>
-              {Object.hasOwn(transaction.details, "crypto") ? (
-                <>
-                  <p style={{ fontSize: "14px" }}>
-                    Hash:{" "}
-                    <a
-                      href={`https://basescan.org/tx/${transaction.details.crypto.txHash}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{ color: "#007bff" }}
-                    >
-                      {transaction.details.crypto.txHash}
-                    </a>
-                  </p>
-                  <p style={{ fontSize: "14px" }}>
-                    Token:{" "}
-                    {tokenSymbols[transaction.details.crypto.token] ||
-                      transaction.details.crypto.token}
-                  </p>
-                  <p style={{ fontSize: "14px" }}>
-                    Block:{" "}
-                    <a
-                      href={`https://basescan.org/block/${transaction.details.crypto.blockNumber}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{ color: "#007bff" }}
-                    >
-                      {transaction.details.crypto.blockNumber}
-                    </a>
-                  </p>
-                </>
-              ) : (
-                <>
-                  <p style={{ fontSize: "14px" }}>
-                    Transaction ID: {transaction.details.transactionId}
-                  </p>
-                  <p style={{ fontSize: "14px" }}>
-                    Currency: {transaction.details.currency}
-                  </p>
-                  <p style={{ fontSize: "14px" }}>
-                    Reference: {transaction.details.referenceNumber}
-                  </p>
-                </>
-              )}
-            </div>
-            <div style={{ marginTop: "10px" }}>
-              {editingBudget?.transactionId === transaction.id ? (
-                <div
-                  style={{
-                    display: "flex",
-                    gap: "10px",
-                    alignItems: "center",
-                  }}
-                >
-                  <input
-                    type="text"
-                    value={editingBudget.budget}
-                    onChange={(e) =>
-                      setEditingBudget({
-                        ...editingBudget,
-                        budget: e.target.value,
-                      })
-                    }
-                    placeholder="Enter budget ID"
-                    style={{
-                      padding: "6px",
-                      borderRadius: "4px",
-                      border: "1px solid #ccc",
-                    }}
-                  />
-                  <button
-                    onClick={() => handleUpdateBudget(transaction.id)}
-                    style={{
-                      padding: "6px 12px",
-                      backgroundColor: "#28a745",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "4px",
-                      cursor: "pointer",
-                    }}
-                  >
-                    Save
-                  </button>
-                  <button
-                    onClick={() => setEditingBudget(null)}
-                    style={{
-                      padding: "6px 12px",
-                      backgroundColor: "#6c757d",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "4px",
-                      cursor: "pointer",
-                    }}
-                  >
-                    Cancel
-                  </button>
-                </div>
-              ) : (
-                <div
-                  style={{
-                    display: "flex",
-                    gap: "10px",
-                    alignItems: "center",
-                  }}
-                >
-                  <p style={{ fontSize: "14px" }}>
-                    Budget: {transaction.budget || "Not assigned"}
-                  </p>
-                  <button
-                    onClick={() =>
-                      setEditingBudget({
-                        transactionId: transaction.id,
-                        budget: transaction.budget || "",
-                      })
-                    }
-                    style={{
-                      padding: "6px 12px",
-                      backgroundColor: "#17a2b8",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "4px",
-                      cursor: "pointer",
-                    }}
-                  >
-                    Edit Budget
-                  </button>
-                </div>
-              )}
-            </div>
-            <div style={{ marginTop: "10px" }}>
-              <button
-                onClick={() => {
-                  dispatch(actions.deleteTransaction({ id: transaction.id }));
-                }}
-                style={{
-                  padding: "6px 12px",
-                  backgroundColor: "#dc3545",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "4px",
-                  cursor: "pointer",
-                }}
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        ))}
+      {/* Transaction Management Header */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: "20px",
+        }}
+      >
+        <h3>Transaction Management</h3>
+        <button
+          onClick={() => setShowTransactionForm(true)}
+          style={{
+            padding: "8px 16px",
+            backgroundColor: "#333",
+            color: "white",
+            border: "none",
+            borderRadius: "4px",
+            cursor: "pointer",
+          }}
+        >
+          New Txn
+        </button>
       </div>
+
+      {showTransactionForm && (
+        <form onSubmit={handleSubmit} style={{ marginBottom: "20px" }}>
+          <div style={{ display: "grid", gap: "10px", maxWidth: "500px" }}>
+            <input
+              type="text"
+              value={newTransaction.counterParty}
+              onChange={(e) =>
+                setNewTransaction({
+                  ...newTransaction,
+                  counterParty: e.target.value,
+                })
+              }
+              placeholder="Counterparty"
+            />
+            <input
+              type="number"
+              value={newTransaction.amount}
+              onChange={(e) =>
+                setNewTransaction({ ...newTransaction, amount: e.target.value })
+              }
+              placeholder="Amount"
+            />
+            <input
+              type="text"
+              value={newTransaction.details.txHash}
+              onChange={(e) =>
+                setNewTransaction({
+                  ...newTransaction,
+                  details: {
+                    ...newTransaction.details,
+                    txHash: e.target.value,
+                  },
+                })
+              }
+              placeholder="Transaction Hash"
+            />
+            <input
+              type="text"
+              value={newTransaction.details.token}
+              onChange={(e) =>
+                setNewTransaction({
+                  ...newTransaction,
+                  details: { ...newTransaction.details, token: e.target.value },
+                })
+              }
+              placeholder="Token"
+            />
+            <input
+              type="number"
+              value={newTransaction.details.blockNumber}
+              onChange={(e) =>
+                setNewTransaction({
+                  ...newTransaction,
+                  details: {
+                    ...newTransaction.details,
+                    blockNumber: e.target.value,
+                  },
+                })
+              }
+              placeholder="Block Number"
+            />
+            <button type="submit">Submit Transaction</button>
+            <button type="button" onClick={() => setShowTransactionForm(false)}>
+              Cancel
+            </button>
+          </div>
+        </form>
+      )}
+
+      <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <thead>
+          <tr style={{ borderBottom: "1px solid #eee" }}>
+            <th style={{ textAlign: "left", padding: "12px 8px" }}>Txn Hash</th>
+            <th style={{ textAlign: "left", padding: "12px 8px" }}>Block</th>
+            <th style={{ textAlign: "left", padding: "12px 8px" }}>Date</th>
+            <th style={{ textAlign: "left", padding: "12px 8px" }}>
+              Counterparty Address
+            </th>
+            <th style={{ textAlign: "left", padding: "12px 8px" }}>Type</th>
+            <th style={{ textAlign: "left", padding: "12px 8px" }}>Amount</th>
+            <th style={{ textAlign: "left", padding: "12px 8px" }}>Token</th>
+            <th style={{ textAlign: "left", padding: "12px 8px" }}>
+              Budget Path
+            </th>
+            <th style={{ textAlign: "left", padding: "12px 8px" }}></th>
+          </tr>
+        </thead>
+        <tbody>
+          {transactions.map((tx) => (
+            <tr key={tx.id} style={{ borderBottom: "1px solid #eee" }}>
+              <td style={{ padding: "12px 8px", color: "#0066cc" }}>
+                {tx.details.txHash.substring(0, 10)}...
+              </td>
+              <td style={{ padding: "12px 8px" }}>{tx.details.blockNumber}</td>
+              <td style={{ padding: "12px 8px" }}>
+                {new Date(tx.datetime).toLocaleDateString()}
+              </td>
+              <td style={{ padding: "12px 8px" }}>
+                {tx.counterParty?.substring(0, 10)}...
+              </td>
+              <td style={{ padding: "12px 8px" }}>
+                <span
+                  style={{
+                    color:
+                      parseFloat(tx.amount.toString()) > 0
+                        ? "#22c55e"
+                        : "#ef4444",
+                    fontWeight: "500",
+                  }}
+                >
+                  {parseFloat(tx.amount.toString()) > 0 ? "In" : "Out"}
+                </span>
+              </td>
+              <td style={{ padding: "12px 8px" }}>
+                {Math.abs(parseFloat(tx.amount.toString()))}
+              </td>
+              <td style={{ padding: "12px 8px" }}>{tx.details.token}</td>
+              <td style={{ padding: "12px 8px" }}>
+                {tx.budget || "SKY/Ecosystem-Actor/Powerhouse"}
+              </td>
+              <td style={{ padding: "12px 8px" }}>
+                <button
+                  onClick={() => {
+                    /* TODO: Delete transaction */
+                  }}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    color: "#ff4444",
+                    cursor: "pointer",
+                  }}
+                >
+                  🗑️
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      {/* TODO: Add modal for new transaction form */}
     </div>
   );
 }

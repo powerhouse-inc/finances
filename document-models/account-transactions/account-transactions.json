@@ -13,8 +13,8 @@
             "changeLog": [],
             "state": {
                 "global": {
-                    "schema": "type AccountTransactionsState {\n  transactions: [TransactionEntry!]!\n  budgets: [Budget!]!\n}\n\ntype TransactionEntry {\n  id: ID!\n  fromAccount: EthereumAddress\n  toAccount: EthereumAddress\n  amount: Amount_Money!\n  datetime: DateTime!\n  details: TransactionDetails!\n  budget: OID\n}\n\nunion TransactionDetails = CryptoTransactionDetails | BankTransactionDetails\n\ntype CryptoTransactionDetails {\n  txHash: String!\n  token: Currency!\n  blockNumber: Int\n}\n\ntype BankTransactionDetails {\n  currency: Currency!\n  transactionId: String\n  referenceNumber: String\n}\n\ntype Budget {\n  id: OID!\n  name: OLabel\n}\n",
-                    "initialValue": "{\n  \"transactions\": []\n}",
+                    "schema": "type AccountTransactionsState {\n  account: AgentLink\n  transactions: [TransactionEntry!]!\n  budgets: [Budget!]!\n}\n\ntype TransactionEntry {\n  id: ID!\n  counterParty: EthereumAddress\n  amount: Amount_Tokens!\n  datetime: DateTime!\n  details: TransactionDetails!\n  budget: OID\n}\n\ntype TransactionDetails {\n  txHash: String!\n  token: Currency!\n  blockNumber: Int\n}\n\ntype Budget {\n  id: OID!\n  name: OLabel\n}\n\ntype AgentLink {\n  id: PHID!\n  username: String\n  type: AgentType\n  icon: URL\n}\n\nenum AgentType {\n  CONTRIBUTOR\n  TEAM\n  AI\n}\n",
+                    "initialValue": "{\n  \"account\": {\n    \"id\": \"\",\n    \"username\": \"\",\n    \"type\": \"CONTRIBUTOR\",\n    \"icon\": \"\"\n  },\n  \"transactions\": [],\n  \"budgets\": []\n}",
                     "examples": []
                 },
                 "local": {
@@ -33,7 +33,7 @@
                             "id": "Sogtf1zw5A7oeK5/bloa3DYaB+k=",
                             "name": "CREATE_TRANSACTION",
                             "description": "Adds a new transaction to the account transactions state.",
-                            "schema": "input CreateTransactionInput {\n  fromAccount: EthereumAddress\n  toAccount: EthereumAddress\n  amount: Amount_Money!\n  datetime: DateTime!\n  details: TransactionDetailsInput!\n  budget: OID\n}\n\ninput TransactionDetailsInput {\n  crypto: CryptoTransactionDetailsInput\n  bank: BankTransactionDetailsInput\n}\n\ninput CryptoTransactionDetailsInput {\n  txHash: String!\n  token: Currency!\n  blockNumber: Int\n}\n\ninput BankTransactionDetailsInput {\n  currency: Currency!\n  transactionId: String\n  referenceNumber: String\n}\n\ninput Budget {\n  id: OID!\n  name: OLabel\n}",
+                            "schema": "input CreateTransactionInput {\n  counterParty: EthereumAddress\n  amount: Amount_Money!\n  datetime: DateTime!\n  details: TransactionDetailsInput!\n  budget: OID\n}\n\ninput TransactionDetailsInput {\n  txHash: String!\n  token: Currency!\n  blockNumber: Int\n}\n\ninput Budget {\n  id: OID!\n  name: OLabel\n}",
                             "template": "",
                             "reducer": "",
                             "errors": [],
@@ -44,7 +44,7 @@
                             "id": "kVD5pEzD+MwUp+AX3edMzGXo2F8=",
                             "name": "UPDATE_TRANSACTION",
                             "description": "Updates an existing transaction in the account transactions state.",
-                            "schema": "input UpdateTransactionInput {\n  fromAccount: EthereumAddress\n  toAccount: EthereumAddress\n  amount: Amount_Money\n  datetime: DateTime\n  details: TransactionDetailsInput\n  budget: OID\n}\n\ninput TransactionDetailsInput {\n  crypto: CryptoTransactionDetailsInput\n  bank: BankTransactionDetailsInput\n}\n\ninput CryptoTransactionDetailsInput {\n  txHash: String\n  token: Currency\n  blockNumber: Int\n}\n\ninput BankTransactionDetailsInput {\n  currency: Currency\n  transactionId: String\n  referenceNumber: String\n}\n\ninput Budget {\n  id: OID!\n  name: OLabel\n}",
+                            "schema": "input UpdateTransactionInput {\n  counterParty: EthereumAddress\n  amount: Amount_Money\n  datetime: DateTime\n  details: TransactionDetailsInput\n  budget: OID\n}\n\ninput TransactionDetailsInput {\n  txHash: String\n  token: Currency\n  blockNumber: Int\n}\n\ninput Budget {\n  id: OID!\n  name: OLabel\n}",
                             "template": "",
                             "reducer": "",
                             "errors": [],
@@ -67,6 +67,17 @@
                             "name": "UPDATE_TRANSACTION_BUDGET",
                             "description": "Updates the budget associated with a specific transaction.",
                             "schema": "input UpdateTransactionBudgetInput {\n  txId: ID!,\n  budgetId: OID!\n}",
+                            "template": "",
+                            "reducer": "",
+                            "errors": [],
+                            "examples": [],
+                            "scope": "global"
+                        },
+                        {
+                            "id": "ClxED1TdWP656+cfE2/rqFFfq1Q=",
+                            "name": "UPDATE_ACCOUNT",
+                            "description": "Update the account associated with the transaction document",
+                            "schema": "input UpdateAccountInput {\n  account: String\n}",
                             "template": "",
                             "reducer": "",
                             "errors": [],
