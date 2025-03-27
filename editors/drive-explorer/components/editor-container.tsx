@@ -14,7 +14,7 @@ import {
   RevisionHistory,
   DefaultEditorLoader,
 } from "@powerhousedao/design-system";
-import { useState, Suspense, type FC, useCallback, lazy } from "react";
+import { useState, Suspense, type FC, useCallback, lazy, useEffect } from "react";
 
 import {
   Accounts,
@@ -75,6 +75,12 @@ export const EditorContainer: React.FC<EditorContainerProps> = (props) => {
     user,
   });
 
+  const [updatedDocument, setUpdatedDocument] = useState({ ...document, documentId, driveId });
+
+  useEffect(() => {
+    setUpdatedDocument({ ...document, documentId, driveId });
+  }, [document, documentId, driveId]);
+
   const onExport = useCallback(async () => {
     if (document) {
       const ext = documentModelModule.documentModel.extension;
@@ -123,7 +129,7 @@ export const EditorContainer: React.FC<EditorContainerProps> = (props) => {
       <EditorComponent
         context={context}
         dispatch={dispatch}
-        document={document}
+        document={updatedDocument as unknown as PHDocument}
         error={error}
       />
     </Suspense>

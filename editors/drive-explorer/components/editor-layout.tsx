@@ -13,6 +13,8 @@ import {
 } from "@powerhousedao/design-system";
 import { CreateDocument } from "./create-document.js";
 import type { Node } from "document-drive";
+import { createDocument as createAccountsDocument } from "../../../editors/accounts/gaphQL-operations.js";
+import { client } from "../../../editors/accounts/apollo-client.js";
 
 export interface EditorLayoutProps {
   readonly driveId: string;
@@ -53,15 +55,23 @@ export function EditorLayout({
       const documentModel = selectedDocumentModel.current;
       if (!documentModel) return;
 
-      const node = await addDocument(
-        driveId,
-        fileName,
-        documentModel.documentModel.id
-      );
+      console.log('documentModel.documentModel.id', documentModel.documentModel.id)
+      let nodeId;
+      if(documentModel.documentModel.id === "powerhouse/accounts") {
+        const accountsDocument: any = await createAccountsDocument(client, fileName, driveId);
+        console.log('accountsDocument', accountsDocument)
+        nodeId = accountsDocument
+      }
+      // if(documentModel.documentModel.id === "powerhouse/account-transactions") {
+      //   const accountTransactionsDocument = await createAccountTransactionsDocument(client, fileName, driveId);
+      //   console.log('accountTransactionsDocument', accountTransactionsDocument)
+      //   nodeId = accountTransactionsDocument;
+      // }
 
       selectedDocumentModel.current = null;
-      await fetchDocuments(driveId, [node.id]);
-      setActiveNodeId(node.id);
+      // Fetch both the new document's state and the drive document's state
+      await fetchDocuments(driveId, [nodeId, driveId]);
+      setActiveNodeId(nodeId);
     },
     [addDocument, driveId, setActiveNodeId]
   );

@@ -6,10 +6,16 @@ import {
 } from "../../document-models/accounts/index.js";
 import { type AccountEntry as BaseAccountEntry } from "../../document-models/accounts/gen/types.js";
 import { useState } from "react";
-
+import {
+  createDocument,
+  createAccount,
+  updateAccount,
+  deleteAccount,
+} from "./gaphQL-operations.js";
+import { client } from "./apollo-client.js";
 type AccountEntry = BaseAccountEntry;
 
-export type IProps = EditorProps<AccountsDocument>;
+export type IProps = EditorProps<any>;
 
 export default function Editor(props: IProps) {
   const { document, dispatch } = props;
@@ -42,40 +48,50 @@ export default function Editor(props: IProps) {
     value: string;
   } | null>(null);
 
-  const handleCreateAccount = () => {
+  const handleCreateAccount = async () => {
     console.log("Creating account:", newAccount);
 
-    dispatch(
-      actions.createAccount({
-        id: hashKey(),
-        ...newAccount,
-      })
-    );
+    // dispatch(
+    //   actions.createAccount({
+    //     id: hashKey(),
+    //     ...newAccount,
+    //   })
+    // );
+    const createdAccount = await createAccount(client, document.documentId, {...newAccount, id: hashKey()}, document.driveId);
+    console.log('createdAccount', createdAccount)
     setNewAccount({
-      name: "",
-      account: "",
-      budgetPath: "",
-      type: "Protocol",
-      chain: "",
-      accountTransactionsId: "",
-      owners: [],
+      ...newAccount,
     });
   };
 
-  const handleCellEdit = (account: AccountEntry, field: keyof AccountEntry, value: string) => {
+  const handleCellEdit = (
+    account: AccountEntry,
+    field: keyof AccountEntry,
+    value: string
+  ) => {
     setEditingCell({ accountId: account.id, field, value });
   };
 
-  const handleCellSave = () => {
+  const handleCellSave = async () => {
     if (!editingCell) return;
 
     const { accountId, field, value } = editingCell;
-    dispatch(
-      actions.updateAccount({
+    // dispatch(
+    //   actions.updateAccount({
+    //     id: accountId,
+    //     [field]: value,
+    //   })
+    // );
+    const result = await updateAccount(
+      client,
+      document.documentId,
+      {
         id: accountId,
         [field]: value,
-      })
+      },
+      document.driveId
     );
+    console.log("returned updateAccount value", result);
     setEditingCell(null);
   };
 
@@ -85,7 +101,7 @@ export default function Editor(props: IProps) {
 
   const handleCellBlur = (originalValue: string | null | undefined) => {
     if (!editingCell) return;
-    
+
     // Only update if the value has changed
     if (editingCell.value !== (originalValue || "")) {
       handleCellSave();
@@ -98,15 +114,22 @@ export default function Editor(props: IProps) {
     console.log("Tracking transactions");
   };
 
-  const renderEditableCell = (account: AccountEntry, field: keyof AccountEntry, value: string | null | undefined) => {
-    const isEditing = editingCell?.accountId === account.id && editingCell?.field === field;
+  const renderEditableCell = (
+    account: AccountEntry,
+    field: keyof AccountEntry,
+    value: string | null | undefined
+  ) => {
+    const isEditing =
+      editingCell?.accountId === account.id && editingCell?.field === field;
 
     if (isEditing) {
       return (
         <input
           type="text"
           value={editingCell.value}
-          onChange={(e) => setEditingCell({ ...editingCell, value: e.target.value })}
+          onChange={(e) =>
+            setEditingCell({ ...editingCell, value: e.target.value })
+          }
           onKeyDown={(e) => {
             if (e.key === "Enter") handleCellBlur(value);
             if (e.key === "Escape") handleCellCancel();
@@ -146,6 +169,16 @@ export default function Editor(props: IProps) {
         {value || ""}
       </div>
     );
+  };
+
+  const handleDeleteAccount = async (accountId: string) => {
+    const result = await deleteAccount(
+      client,
+      document.documentId,
+      { id: accountId },
+      document.driveId
+    );
+    console.log("returned deleteAccount value", result);
   };
 
   return (
@@ -247,12 +280,14 @@ export default function Editor(props: IProps) {
             {renderEditableCell(account, "type", account.type)}
             {renderEditableCell(account, "chain", account.chain)}
             {renderEditableCell(account, "budgetPath", account.budgetPath)}
-            {renderEditableCell(account, "accountTransactionsId", account.accountTransactionsId)}
+            {renderEditableCell(
+              account,
+              "accountTransactionsId",
+              account.accountTransactionsId
+            )}
             {renderEditableCell(account, "owners", account.owners?.join(", "))}
             <button
-              onClick={() =>
-                dispatch(actions.deleteAccount({ id: account.id }))
-              }
+              onClick={() => handleDeleteAccount(account.id)}
               style={{
                 padding: "4px 8px",
                 backgroundColor: "#dc3545",
