@@ -51,13 +51,6 @@ input CreateAccountInput {
 	owners: [PHID]
 }
 
-enum AccountType {
-	Protocol
-	Auditor
-	Operational
-	Payment Processor
-}
-
 input UpdateAccountInput {
     id: OID!
     name: OLabel  
@@ -69,12 +62,6 @@ input UpdateAccountInput {
     owners: [PHID]
 }
 
-enum AccountType {
-	Protocol
-	Auditor
-	Operational
-	Payment Processor
-}
 
 input DeleteAccountInput {
   id: ID!

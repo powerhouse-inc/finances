@@ -5,13 +5,15 @@ const PORT = process.env.PORT || 4001;
 const GQL_ENDPOINT = `http://localhost:${PORT}`;
 
 // Drive that the documents will be added/updated to. Will be created if it does not yet exist
-const DRIVE_NAME =
-  "finances_" +
-  new Date()
-    .toISOString()
-    .substring(0, 16)
-    .replaceAll(/[\-:]/g, "")
-    .replace("T", "_");
+// const DRIVE_NAME =
+//   "finances_" +
+//   new Date()
+//     .toISOString()
+//     .substring(0, 16)
+//     .replaceAll(/[\-:]/g, "")
+//     .replace("T", "_");
+
+const DRIVE_NAME = "finances_accs_txs";
 
 // Preferred editor for the drive when it's created
 const PREFERRED_EDITOR = "FinancesDriveExplorer";
