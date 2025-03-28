@@ -5,8 +5,10 @@ import {
 } from "../../document-models/account-transactions/index.js";
 import { useState, useEffect } from "react";
 import { Button } from "@powerhousedao/design-system";
+import { client } from "./apollo-client.js";
+import { createTransaction, updateTransaction, deleteTransaction } from "./graphQL-operations.js";
 
-export type IProps = EditorProps<AccountTransactionsDocument>;
+export type IProps = EditorProps<any>;
 
 export default function Editor(props: IProps) {
   const { document, dispatch } = props;
@@ -35,18 +37,29 @@ export default function Editor(props: IProps) {
     e.preventDefault();
 
     try {
-      dispatch(
-        actions.createTransaction({
-          counterParty: newTransaction.counterParty,
-          amount: parseFloat(newTransaction.amount),
-          datetime: new Date().toISOString(),
-          details: {
-            txHash: newTransaction.details.txHash,
-            token: newTransaction.details.token,
-            blockNumber: parseInt(newTransaction.details.blockNumber) || null,
+      // dispatch(
+      //   actions.createTransaction({
+      //     counterParty: newTransaction.counterParty,
+      //     amount: parseFloat(newTransaction.amount),
+      //     datetime: new Date().toISOString(),
+      //     details: {
+      //       txHash: newTransaction.details.txHash,
+      //       token: newTransaction.details.token,
+      //       blockNumber: parseInt(newTransaction.details.blockNumber) || null,
+      //     },
+      //   })
+      // );
+      const createdTransaction = await createTransaction(client, document.documentId, {
+        counterParty: newTransaction.counterParty,
+        amount: parseFloat(newTransaction.amount),
+        datetime: new Date().toISOString(),
+        details: {
+          txHash: newTransaction.details.txHash,
+          token: newTransaction.details.token,
+          blockNumber: parseInt(newTransaction.details.blockNumber) || null,
           },
-        })
-      );
+      });
+      console.log('createdTransaction', createdTransaction)
 
       setNewTransaction({
         counterParty: "",

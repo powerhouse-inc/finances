@@ -14,7 +14,9 @@ import {
 import { CreateDocument } from "./create-document.js";
 import type { Node } from "document-drive";
 import { createDocument as createAccountsDocument } from "../../../editors/accounts/gaphQL-operations.js";
-import { client } from "../../../editors/accounts/apollo-client.js";
+import { createDocument as createAccountTransactionsDocument } from "../../../editors/account-transactions/graphQL-operations.js";
+import { client } from "../../accounts/apollo-client.js";
+import { client as accountTransactionsClient } from "../../account-transactions/apollo-client.js";
 
 export interface EditorLayoutProps {
   readonly driveId: string;
@@ -62,11 +64,11 @@ export function EditorLayout({
         console.log('accountsDocument', accountsDocument)
         nodeId = accountsDocument
       }
-      // if(documentModel.documentModel.id === "powerhouse/account-transactions") {
-      //   const accountTransactionsDocument = await createAccountTransactionsDocument(client, fileName, driveId);
-      //   console.log('accountTransactionsDocument', accountTransactionsDocument)
-      //   nodeId = accountTransactionsDocument;
-      // }
+      if(documentModel.documentModel.id === "powerhouse/account-transactions") {
+        const accountTransactionsDocument = await createAccountTransactionsDocument(accountTransactionsClient, fileName, driveId);
+        console.log('accountTransactionsDocument', accountTransactionsDocument)
+        nodeId = accountTransactionsDocument;
+      }
 
       selectedDocumentModel.current = null;
       // Fetch both the new document's state and the drive document's state
