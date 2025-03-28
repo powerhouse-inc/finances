@@ -154,10 +154,7 @@ export const updateAccount = async (
   client: any,
   docId: PHID,
   input: {
-    id: string;
-    name?: string;
-    type?: string;
-    metadata?: Record<string, any>;
+    account: string;
   },
   driveId?: string
 ): Promise<number> => {

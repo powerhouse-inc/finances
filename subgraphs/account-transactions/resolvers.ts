@@ -123,10 +123,12 @@ export const getResolvers = (subgraph: Subgraph) => {
         const docId: string = args.docId || "";
         const doc = await reactor.getDocument(driveId, docId);
 
+        console.log('updating account', args.input);
+
         await reactor.addAction(
           driveId,
           docId,
-          actions.updateAccount({ ...args.input }),
+          actions.updateAccount({ account: args.input.account }),
         );
 
         return doc.revision.global + 1;

@@ -6,7 +6,12 @@ import {
 import { useState, useEffect } from "react";
 import { Button } from "@powerhousedao/design-system";
 import { client } from "./apollo-client.js";
-import { createTransaction, updateTransaction, deleteTransaction, importTransactions } from "./graphQL-operations.js";
+import {
+  createTransaction,
+  updateAccount,
+  deleteTransaction,
+  importTransactions,
+} from "./graphQL-operations.js";
 
 export type IProps = EditorProps<any>;
 
@@ -15,6 +20,7 @@ export default function Editor(props: IProps) {
   const { state } = document;
   const transactions = state.global?.transactions || [];
   const account = state.global?.account;
+  console.log('Transactions Account', account?.username);
 
   const [hasEditedAccount, setHasEditedAccount] = useState(false);
   const [newUsername, setNewUsername] = useState(account?.username || "");
@@ -49,17 +55,21 @@ export default function Editor(props: IProps) {
       //     },
       //   })
       // );
-      const createdTransaction = await createTransaction(client, document.documentId, {
-        counterParty: newTransaction.counterParty,
-        amount: parseFloat(newTransaction.amount),
-        datetime: new Date().toISOString(),
-        details: {
-          txHash: newTransaction.details.txHash,
-          token: newTransaction.details.token,
-          blockNumber: parseInt(newTransaction.details.blockNumber),
+      const createdTransaction = await createTransaction(
+        client,
+        document.documentId,
+        {
+          counterParty: newTransaction.counterParty,
+          amount: parseFloat(newTransaction.amount),
+          datetime: new Date().toISOString(),
+          details: {
+            txHash: newTransaction.details.txHash,
+            token: newTransaction.details.token,
+            blockNumber: parseInt(newTransaction.details.blockNumber),
           },
-      });
-      console.log('createdTransaction', createdTransaction)
+        }
+      );
+      console.log("createdTransaction", createdTransaction);
 
       setNewTransaction({
         counterParty: "",
@@ -94,10 +104,15 @@ export default function Editor(props: IProps) {
 
   const handleImportSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Store the address for later use
+
+    console.log("Stored Ethereum address:", ethereumAddress);
+    await updateAccount(client, document.documentId, {
+      account: ethereumAddress,
+    });
+
     const importedTransactions = await importTransactions(client, document.documentId, { addresses: [ethereumAddress] });
     console.log("importedTransactions", importedTransactions);
-    console.log("Stored Ethereum address:", ethereumAddress);
+
     setShowImportModal(false);
     setEthereumAddress("");
   };
@@ -487,76 +502,90 @@ export default function Editor(props: IProps) {
         </div>
       )}
 
-      <table style={{ width: "100%", borderCollapse: "collapse" }}>
-        <thead>
-          <tr style={{ borderBottom: "1px solid #eee" }}>
-            <th style={{ textAlign: "left", padding: "12px 8px" }}>Txn Hash</th>
-            <th style={{ textAlign: "left", padding: "12px 8px" }}>Block</th>
-            <th style={{ textAlign: "left", padding: "12px 8px" }}>Date</th>
-            <th style={{ textAlign: "left", padding: "12px 8px" }}>
-              Counterparty Address
-            </th>
-            <th style={{ textAlign: "left", padding: "12px 8px" }}>Type</th>
-            <th style={{ textAlign: "left", padding: "12px 8px" }}>Amount</th>
-            <th style={{ textAlign: "left", padding: "12px 8px" }}>Token</th>
-            <th style={{ textAlign: "left", padding: "12px 8px" }}>
-              Budget Path
-            </th>
-            <th style={{ textAlign: "left", padding: "12px 8px" }}></th>
-          </tr>
-        </thead>
-        <tbody>
-          {transactions.map((tx, index) => (
-            <tr key={index} style={{ borderBottom: "1px solid #eee" }}>
-              <td style={{ padding: "12px 8px", color: "#0066cc" }}>
-                {tx.details.txHash.substring(0, 10)}...
-              </td>
-              <td style={{ padding: "12px 8px" }}>{tx.details.blockNumber}</td>
-              <td style={{ padding: "12px 8px" }}>
-                {new Date(tx.datetime).toLocaleDateString()}
-              </td>
-              <td style={{ padding: "12px 8px" }}>
-                {tx.counterParty?.substring(0, 10)}...
-              </td>
-              <td style={{ padding: "12px 8px" }}>
-                <span
-                  style={{
-                    color:
-                      parseFloat(tx.amount.toString()) > 0
-                        ? "#22c55e"
-                        : "#ef4444",
-                    fontWeight: "500",
-                  }}
-                >
-                  {parseFloat(tx.amount.toString()) > 0 ? "In" : "Out"}
-                </span>
-              </td>
-              <td style={{ padding: "12px 8px" }}>
-                {Math.abs(parseFloat(tx.amount.toString()))}
-              </td>
-              <td style={{ padding: "12px 8px" }}>{tx.details.token}</td>
-              <td style={{ padding: "12px 8px" }}>
-                {tx.budget || "SKY/Ecosystem-Actor/Powerhouse"}
-              </td>
-              <td style={{ padding: "12px 8px" }}>
-                <button
-                  onClick={() => {
-                    /* TODO: Delete transaction */
-                  }}
-                  style={{
-                    background: "none",
-                    border: "none",
-                    color: "#ff4444",
-                    cursor: "pointer",
-                  }}
-                >
-                  🗑️
-                </button>
-              </td>
+      <div style={{ maxHeight: "600px", overflowY: "auto" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <thead
+            style={{
+              position: "sticky",
+              top: 0,
+              backgroundColor: "white",
+              zIndex: 1,
+            }}
+          >
+            <tr style={{ borderBottom: "1px solid #eee" }}>
+              <th style={{ textAlign: "left", padding: "12px 8px" }}>
+                Txn Hash
+              </th>
+              <th style={{ textAlign: "left", padding: "12px 8px" }}>Block</th>
+              <th style={{ textAlign: "left", padding: "12px 8px" }}>Date</th>
+              <th style={{ textAlign: "left", padding: "12px 8px" }}>
+                Counterparty
+              </th>
+              <th style={{ textAlign: "left", padding: "12px 8px" }}>Type</th>
+              <th style={{ textAlign: "left", padding: "12px 8px" }}>Amount</th>
+              <th style={{ textAlign: "left", padding: "12px 8px" }}>Token</th>
+              <th style={{ textAlign: "left", padding: "12px 8px" }}>
+                Budget Path
+              </th>
+              <th style={{ textAlign: "left", padding: "12px 8px" }}></th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {transactions.map((tx: any, index: any) => (
+              <tr key={index} style={{ borderBottom: "1px solid #eee" }}>
+                <td style={{ padding: "12px 8px", color: "#0066cc" }}>
+                  {tx.details.txHash.substring(0, 10)}...
+                </td>
+                <td style={{ padding: "12px 8px" }}>
+                  {tx.details.blockNumber}
+                </td>
+                <td style={{ padding: "12px 8px" }}>
+                  {new Date(tx.datetime).toLocaleDateString()}
+                </td>
+                <td style={{ padding: "12px 8px" }}>
+                  {tx.counterParty?.substring(0, 5)}...
+                  {tx.counterParty?.substring(tx.counterParty.length - 5)}
+                </td>
+                <td style={{ padding: "12px 8px" }}>
+                  <span
+                    style={{
+                      color:
+                        tx.counterParty.toLowerCase() === account?.username.toLowerCase()
+                          ? "#22c55e"
+                          : "#ef4444",
+                      fontWeight: "500",
+                    }}
+                  >
+                    {tx.counterParty.toLowerCase() === account?.username.toLowerCase() ? "In" : "Out"}
+                  </span>
+                </td>
+                <td style={{ padding: "12px 8px" }}>
+                  {Math.abs(parseFloat(tx.amount.toString())).toFixed(2)}
+                </td>
+                <td style={{ padding: "12px 8px" }}>{tx.details.token}</td>
+                <td style={{ padding: "12px 8px" }}>
+                  {tx.budget || "SKY/Ecosystem-Actor/Powerhouse"}
+                </td>
+                <td style={{ padding: "12px 8px" }}>
+                  <button
+                    onClick={() => {
+                      /* TODO: Delete transaction */
+                    }}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      color: "#ff4444",
+                      cursor: "pointer",
+                    }}
+                  >
+                    🗑️
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
       {/* TODO: Add modal for new transaction form */}
     </div>
