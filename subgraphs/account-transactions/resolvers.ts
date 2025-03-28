@@ -5,8 +5,26 @@ import { type Subgraph } from "@powerhousedao/reactor-api";
 import { addFile } from "document-drive";
 import { actions } from "../../document-models/account-transactions/index.js";
 import { generateId, hashKey } from "document-model";
+import { pullAlchemyData } from "../../commands/import-example/utils/pullAlchemyData.js";
+import { CreateTransactionInput } from "../../document-models/account-transactions/index.js";
 
 const DEFAULT_DRIVE_ID = "powerhouse";
+
+type ResultType = {
+  blockNum: string;
+  uniqueId: string;
+  hash: string;
+  from: string;
+  to: string;
+  value: number;
+  erc721TokenId: string | null;
+  erc1155Metadata: any | null;
+  tokenId: string | null;
+  asset: string;
+  category: string;
+  rawContract: Record<string, any>;
+  blockTimestamp: string;
+};
 
 export const getResolvers = (subgraph: Subgraph) => {
   const reactor = subgraph.reactor;
@@ -111,6 +129,37 @@ export const getResolvers = (subgraph: Subgraph) => {
           actions.updateAccount({ ...args.input }),
         );
 
+        return doc.revision.global + 1;
+      },
+
+      AccountTransactions_importTransactions: async (_: any, args: any) => {
+        const driveId: string = args.driveId || DEFAULT_DRIVE_ID;
+        const docId: string = args.docId || "";
+        const doc = await reactor.getDocument(driveId, docId);
+
+        console.log("importing transactions for addresses", args);
+        // pull transactions from alchemy
+        const results = await pullAlchemyData(args.input.addresses);
+        console.log('pulling txs', [...results].length);
+
+        // // create transactions in document
+        for (const resultArray of results) {
+          for (const result of resultArray as any) {
+            const counterPartyAddress = result.from === args.input.addresses[0] ? result.to : result.from;
+            const transactionInput: CreateTransactionInput = {
+              counterParty: counterPartyAddress,
+              amount: result.value,
+              datetime: result.blockTimestamp,
+              details: {
+                txHash: result.hash,
+                token: result.asset,
+                blockNumber: parseInt(result.blockNum, 16),
+              },
+            }
+            console.log("creating transaction", transactionInput);
+            await reactor.addAction(driveId, docId, actions.createTransaction({ ...transactionInput }));
+          }
+        }
         return doc.revision.global + 1;
       },
     },

@@ -49,8 +49,11 @@
   },
   "dependencies": {
     "@apollo/client": "^3.13.5",
+    "@commander-js/extra-typings": "^13.1.0",
     "@powerhousedao/design-system": "1.39.3-dev.0",
+    "commander": "^13.1.0",
     "document-model": "^2.27.1",
+    "dotenv": "^16.4.7",
     "error": "^10.4.0",
     "graphql": "^16.10.0",
     "graphql-tag": "^2.12.6",

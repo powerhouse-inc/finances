@@ -6,7 +6,7 @@ import {
 import { useState, useEffect } from "react";
 import { Button } from "@powerhousedao/design-system";
 import { client } from "./apollo-client.js";
-import { createTransaction, updateTransaction, deleteTransaction } from "./graphQL-operations.js";
+import { createTransaction, updateTransaction, deleteTransaction, importTransactions } from "./graphQL-operations.js";
 
 export type IProps = EditorProps<any>;
 
@@ -56,7 +56,7 @@ export default function Editor(props: IProps) {
         details: {
           txHash: newTransaction.details.txHash,
           token: newTransaction.details.token,
-          blockNumber: parseInt(newTransaction.details.blockNumber) || null,
+          blockNumber: parseInt(newTransaction.details.blockNumber),
           },
       });
       console.log('createdTransaction', createdTransaction)
@@ -92,9 +92,11 @@ export default function Editor(props: IProps) {
     }
   };
 
-  const handleImportSubmit = (e: React.FormEvent) => {
+  const handleImportSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     // Store the address for later use
+    const importedTransactions = await importTransactions(client, document.documentId, { addresses: [ethereumAddress] });
+    console.log("importedTransactions", importedTransactions);
     console.log("Stored Ethereum address:", ethereumAddress);
     setShowImportModal(false);
     setEthereumAddress("");

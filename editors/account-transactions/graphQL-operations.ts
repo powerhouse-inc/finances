@@ -38,6 +38,12 @@ export const UPDATE_ACCOUNT = gql`
   }
 `;
 
+export const IMPORT_TRANSACTIONS = gql`
+  mutation ImportTransactions($driveId: String, $docId: PHID!, $input: AccountTransactions_ImportTransactionsInput!) {
+    AccountTransactions_importTransactions(driveId: $driveId, docId: $docId, input: $input)
+  }
+`;
+
 // Helper Functions
 export const createDocument = async (
   client: any,
@@ -164,4 +170,23 @@ export const updateAccount = async (
     },
   });
   return data.AccountTransactions_updateAccount;
+};
+
+export const importTransactions = async (
+  client: any,
+  docId: PHID,
+  input: {
+    addresses: string[];
+  },
+  driveId?: string
+): Promise<number> => {
+  const { data } = await client.mutate({
+    mutation: IMPORT_TRANSACTIONS,
+    variables: {
+      driveId,
+      docId,
+      input,
+    },
+  });
+  return data.AccountTransactions_importTransactions;
 };
