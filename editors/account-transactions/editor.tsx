@@ -534,7 +534,7 @@ export default function Editor(props: IProps) {
             {transactions.map((tx: any, index: any) => (
               <tr key={index} style={{ borderBottom: "1px solid #eee" }}>
                 <td style={{ padding: "12px 8px", color: "#0066cc" }}>
-                  {tx.details.txHash.substring(0, 10)}...
+                  <a href={`https://etherscan.io/tx/${tx.details.txHash}`} target="_blank" rel="noopener noreferrer">{tx.details.txHash.substring(0, 10)}...</a>
                 </td>
                 <td style={{ padding: "12px 8px" }}>
                   {tx.details.blockNumber}
