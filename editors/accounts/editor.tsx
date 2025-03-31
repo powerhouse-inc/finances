@@ -13,6 +13,13 @@ import {
   deleteAccount,
 } from "./gaphQL-operations.js";
 import { client } from "./apollo-client.js";
+import { client as accountTransactionsClient } from "../account-transactions/apollo-client.js";
+import {
+  createDocument as createAccountTransactionsDocument,
+  importTransactions,
+  updateAccount as updateAccountTransactions,
+} from "../account-transactions/graphQL-operations.js";
+
 type AccountEntry = BaseAccountEntry;
 
 export type IProps = EditorProps<any>;
@@ -57,10 +64,21 @@ export default function Editor(props: IProps) {
     //     ...newAccount,
     //   })
     // );
-    const createdAccount = await createAccount(client, document.documentId, {...newAccount, id: hashKey()}, document.driveId);
-    console.log('createdAccount', createdAccount)
+    const createdAccount = await createAccount(
+      client,
+      document.documentId,
+      { ...newAccount, id: hashKey() },
+      document.driveId
+    );
+    console.log("createdAccount", createdAccount);
     setNewAccount({
-      ...newAccount,
+      name: "",
+      account: "",
+      budgetPath: "",
+      type: "Protocol",
+      chain: "",
+      accountTransactionsId: "",
+      owners: [],
     });
   };
 
@@ -110,8 +128,72 @@ export default function Editor(props: IProps) {
     }
   };
 
-  const trackTransactions = () => {
+  const trackTransactions = async () => {
     console.log("Tracking transactions");
+    const accountAddresses = state.accounts.map((account: AccountEntry) => {
+      return {
+        address: account.account,
+        name: account.name,
+      };
+    });
+    console.log("accountAddresses", accountAddresses);
+    if (accountAddresses.length === 0) {
+      console.log("No accounts to track");
+      return;
+    }
+    // Create account transactions document for each account and import transactions
+    const accountTransactionsDocuments = await Promise.all(
+      accountAddresses.map(
+        async (account: { address: string; name: string }) => {
+          // Create account transactions document
+          const accountTransactionsDocument =
+            await createAccountTransactionsDocument(
+              accountTransactionsClient,
+              account.name,
+              document.driveId
+            );
+
+          // Add transaction document id to account
+          await addTransactionDocumentIdToAccount(account.address, accountTransactionsDocument);
+          
+          // Set counterparty address
+          await updateAccountTransactions(
+            accountTransactionsClient,
+            accountTransactionsDocument,
+            {
+              account: account.address,
+            }
+          );
+
+          // Import transactions
+          const result = await importTransactions(
+            accountTransactionsClient,
+            accountTransactionsDocument,
+            { addresses: [account.address] },
+            document.driveId
+          );
+
+          // Add transaction document id to account
+          return result;
+        }
+      )
+    );
+    console.log(
+      "created and imported transactions",
+      accountTransactionsDocuments
+    );
+  };
+
+  const addTransactionDocumentIdToAccount = async (address: string, transactionDocumentId: string) => {
+    const account = state.accounts.find((account: AccountEntry) => account.account === address);
+    if (!account) {
+      console.log("Account not found");
+      return;
+    }
+    await updateAccount(client, document.documentId, {
+      id: account.id,
+      accountTransactionsId: transactionDocumentId,
+    }, document.driveId);
   };
 
   const renderEditableCell = (

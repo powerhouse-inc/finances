@@ -6,7 +6,7 @@ import { addFile } from "document-drive";
 import { actions } from "../../document-models/accounts/index.js";
 import { generateId, hashKey } from "document-model";
 
-const DEFAULT_DRIVE_ID = "powerhouse";
+const DEFAULT_DRIVE_ID = "finances_accs_txs";
 
 export const getResolvers = (subgraph: Subgraph) => {
   const reactor = subgraph.reactor;

@@ -8,7 +8,7 @@ import { generateId, hashKey } from "document-model";
 import { pullAlchemyData } from "../../commands/import-example/utils/pullAlchemyData.js";
 import { CreateTransactionInput } from "../../document-models/account-transactions/index.js";
 
-const DEFAULT_DRIVE_ID = "powerhouse";
+const DEFAULT_DRIVE_ID = "finances_accs_txs";
 
 type ResultType = {
   blockNum: string;
@@ -123,8 +123,6 @@ export const getResolvers = (subgraph: Subgraph) => {
         const docId: string = args.docId || "";
         const doc = await reactor.getDocument(driveId, docId);
 
-        console.log('updating account', args.input);
-
         await reactor.addAction(
           driveId,
           docId,
@@ -142,14 +140,16 @@ export const getResolvers = (subgraph: Subgraph) => {
         console.log("importing transactions for addresses", args);
         // pull transactions from alchemy
         const results = await pullAlchemyData(args.input.addresses);
-        console.log('pulling txs', [...results].length);
+
+        // console.log("results", results);
 
         // // create transactions in document
         for (const resultArray of results) {
           for (const result of resultArray as any) {
-            const counterPartyAddress = result.from === args.input.addresses[0] ? result.to : result.from;
+            const counterPartyAddress = args.input.addresses[0].toLowerCase() === result.from.toLowerCase() ? result.to : result.from;
+            // const counterPartyAddress = result.from.toLowerCase() === args.input.addresses[0].toLowerCase() ? result.to : result.from;
             const transactionInput: CreateTransactionInput = {
-              counterParty: counterPartyAddress,
+              counterParty: result.to,
               amount: result.value,
               datetime: result.blockTimestamp,
               details: {
@@ -158,7 +158,7 @@ export const getResolvers = (subgraph: Subgraph) => {
                 blockNumber: parseInt(result.blockNum, 16),
               },
             }
-            console.log("creating transaction", transactionInput);
+            // console.log("creating transaction", transactionInput);
             await reactor.addAction(driveId, docId, actions.createTransaction({ ...transactionInput }));
           }
         }

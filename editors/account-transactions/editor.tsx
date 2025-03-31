@@ -540,7 +540,7 @@ export default function Editor(props: IProps) {
                   {tx.details.blockNumber}
                 </td>
                 <td style={{ padding: "12px 8px" }}>
-                  {new Date(tx.datetime).toLocaleDateString()}
+                  {new Date(tx.datetime).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-').toUpperCase()}
                 </td>
                 <td style={{ padding: "12px 8px" }}>
                   {tx.counterParty?.substring(0, 5)}...
@@ -560,11 +560,11 @@ export default function Editor(props: IProps) {
                   </span>
                 </td>
                 <td style={{ padding: "12px 8px" }}>
-                  {Math.abs(parseFloat(tx.amount.toString())).toFixed(2)}
+                  {Math.abs(parseFloat(tx.amount.toString())).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
                 </td>
                 <td style={{ padding: "12px 8px" }}>{tx.details.token}</td>
                 <td style={{ padding: "12px 8px" }}>
-                  {tx.budget || "SKY/Ecosystem-Actor/Powerhouse"}
+                  {tx.budget || ""}
                 </td>
                 <td style={{ padding: "12px 8px" }}>
                   <button
