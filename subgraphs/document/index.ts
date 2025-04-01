@@ -1,43 +1,11 @@
 import { Subgraph } from "@powerhousedao/reactor-api";
-
-import { gql } from "graphql-tag";
-
+import { schema } from "./schema.js";
+import { getResolvers } from "./resolvers.js";
 export class DocumentSubgraph extends Subgraph {
   name = "document";
-
-  resolvers = {
-    Query: {
-      example: {
-        resolve: async (parent, args, context, info) => {
-          return "example";
-        },
-      },
-    },
-  };
-
-  typeDefs = gql`
-    type Query {
-      example(id: ID!): String
-    }
-  `;
-
-  additionalContextFields = {
-    example: "test",
-  };
-
-  async onSetup() {
-    await this.createOperationalTables();
-  }
-
-  async createOperationalTables() {
-    await this.operationalStore.schema.createTableIfNotExists(
-      "example",
-      (table) => {
-        table.string("id").primary();
-        table.string("name");
-      },
-    );
-  }
-
+  typeDefs = schema;
+  resolvers = getResolvers(this);
+  additionalContextFields = {};
+  async onSetup() {}
   async onDisconnect() {}
 }
