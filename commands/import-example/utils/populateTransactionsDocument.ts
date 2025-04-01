@@ -3,6 +3,7 @@ import fetch, { Response } from 'node-fetch';
 
 const GRAPH_ENDPOINT = 'http://localhost:4001/d/finances_accs_txs';
 const ACCOUNT_TRANSACTIONS_ENDPOINT = 'http://localhost:4001/account-transactions';
+const ACCOUNTS_ENDPOINT = 'http://localhost:4001/accounts';
 const FETCH_TIMEOUT = 30000; // 30 seconds timeout
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 5000; // 5 seconds between retries
@@ -68,6 +69,18 @@ interface ImportTransactionsResponse {
   };
 }
 
+interface UpdateAccountResponse {
+  data: {
+    Accounts_updateAccount: number;
+  };
+}
+
+interface UpdateAccountTransactionsResponse {
+  data: {
+    AccountTransactions_updateAccount: number;
+  };
+}
+
 const ACCOUNTS_QUERY = gql`
   query Query($documentId: String!) {
     document(id: $documentId) {
@@ -126,6 +139,18 @@ const CREATE_DOCUMENT_MUTATION = gql`
 const IMPORT_TRANSACTIONS_MUTATION = gql`
   mutation Mutation($driveId: String, $docId: PHID, $input: AccountTransactions_ImportTransactionsInput) {
     AccountTransactions_importTransactions(driveId: $driveId, docId: $docId, input: $input)
+  }
+`;
+
+const UPDATE_ACCOUNT_MUTATION = gql`
+  mutation Mutation($docId: PHID, $input: Accounts_UpdateAccountInput, $driveId: String) {
+    Accounts_updateAccount(docId: $docId, input: $input, driveId: $driveId)
+  }
+`;
+
+const UPDATE_ACCOUNT_TRANSACTIONS_MUTATION = gql`
+  mutation AccountTransactions_updateAccount($driveId: String, $docId: PHID, $input: AccountTransactions_UpdateAccountInput) {
+    AccountTransactions_updateAccount(driveId: $driveId, docId: $docId, input: $input)
   }
 `;
 
@@ -224,6 +249,37 @@ async function importTransactions(docId: string, accountAddress: string): Promis
   return result.data.AccountTransactions_importTransactions;
 }
 
+async function updateAccount(docId: string, accountId: string, accountTransactionsId: string): Promise<number> {
+  const result = await fetchGraphQLWithRetry<UpdateAccountResponse>(
+    UPDATE_ACCOUNT_MUTATION,
+    {
+      driveId: null,
+      docId: docId,
+      input: {
+        id: accountId,
+        accountTransactionsId,
+      },
+    },
+    ACCOUNTS_ENDPOINT
+  );
+  return result.data.Accounts_updateAccount;
+}
+
+async function updateAccountTransactions(docId: string, accountAddress: string): Promise<number> {
+  const result = await fetchGraphQLWithRetry<UpdateAccountTransactionsResponse>(
+    UPDATE_ACCOUNT_TRANSACTIONS_MUTATION,
+    {
+      driveId: null,
+      docId,
+      input: {
+        account: accountAddress,
+      },
+    },
+    ACCOUNT_TRANSACTIONS_ENDPOINT
+  );
+  return result.data.AccountTransactions_updateAccount;
+}
+
 export async function populateTransactionsDocument(accountsDocumentId: string) {
   try {
     // Fetch accounts document
@@ -236,10 +292,11 @@ export async function populateTransactionsDocument(accountsDocumentId: string) {
     }
 
     const accounts = accountsResult.data.document.state.accounts;
-
+    const docId = accountsResult.data.document.id;
+    
     // Process each account
     for (const account of accounts) {
-      const { name, accountTransactionsId, account: accountAddress } = account;
+      const { id, name, accountTransactionsId, account: accountAddress } = account;
 
       if (!accountTransactionsId) {
         console.log(`Account "${name}" (${accountAddress}) has no transactions document yet. Creating one...`);
@@ -248,10 +305,16 @@ export async function populateTransactionsDocument(accountsDocumentId: string) {
           // Create new transactions document
           const newDocId = await createTransactionsDocument(name);
           console.log(`Created new transactions document with ID: ${newDocId}`);
+
+          // Update account with new transactions document ID
+          await updateAccount(docId, id, newDocId);
+
+          // Update counterparty address in account transactions document
+          await updateAccountTransactions(newDocId, accountAddress);
           
           // Import transactions for this account
-          const importResult = await importTransactions(newDocId, accountAddress);
-          console.log(`Imported ${importResult} transactions for account "${name}"`);
+          await importTransactions(newDocId, accountAddress);
+          console.log(`Transactions imported for account "${name}"`);
           
           // Continue to next account
           continue;
@@ -267,15 +330,14 @@ export async function populateTransactionsDocument(accountsDocumentId: string) {
         }
       }
 
-      // Fetch transactions for this account
+      // Only fetch existing transactions, don't import again
       const transactionsResult = await fetchGraphQLWithRetry<TransactionsResponse>(TRANSACTIONS_QUERY, {
         documentId: accountTransactionsId,
       });
 
       if (transactionsResult.data?.document?.state?.transactions) {
         const transactions = transactionsResult.data.document.state.transactions;
-        console.log(`Found ${transactions.length} transactions for account "${name}"`);
-        // Here we can process the transactions further in the next steps
+        console.log(`Found ${transactions.length} existing transactions for account "${name}"`);
       }
     }
   } catch (error) {
