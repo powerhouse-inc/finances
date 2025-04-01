@@ -14,7 +14,14 @@ import {
   RevisionHistory,
   DefaultEditorLoader,
 } from "@powerhousedao/design-system";
-import { useState, Suspense, type FC, useCallback, lazy, useEffect } from "react";
+import {
+  useState,
+  Suspense,
+  type FC,
+  useCallback,
+  lazy,
+  useEffect,
+} from "react";
 
 import {
   Accounts,
@@ -39,12 +46,12 @@ const documentEditorMap2 = {
   [Accounts.documentModel.id]: lazy(() =>
     import("../../accounts/index.js").then((m) => ({
       default: m.default.Component,
-    })),
+    }))
   ),
   [AccountTransactions.documentModel.id]: lazy(() =>
     import("../../account-transactions/index.js").then((m) => ({
       default: m.default.Component,
-    })),
+    }))
   ),
 } as const;
 
@@ -64,7 +71,7 @@ export const EditorContainer: React.FC<EditorContainerProps> = (props) => {
   const user = context.user as User | undefined;
 
   const documentModelModule = getDocumentModel(
-    documentType,
+    documentType
   ) as DocumentModelModule<PHDocument>;
 
   const { dispatch, error, document } = useDocumentEditorProps({
@@ -75,7 +82,11 @@ export const EditorContainer: React.FC<EditorContainerProps> = (props) => {
     user,
   });
 
-  const [updatedDocument, setUpdatedDocument] = useState({ ...document, documentId, driveId });
+  const [updatedDocument, setUpdatedDocument] = useState({
+    ...document,
+    documentId,
+    driveId,
+  });
 
   useEffect(() => {
     setUpdatedDocument({ ...document, documentId, driveId });
@@ -109,29 +120,33 @@ export const EditorContainer: React.FC<EditorContainerProps> = (props) => {
   const EditorComponent = Editor as FC<EditorProps<PHDocument>>;
 
   return showRevisionHistory ? (
-    <RevisionHistory
-      documentId={documentId}
-      documentTitle={title}
-      globalOperations={document.operations.global}
-      key={documentId}
-      localOperations={document.operations.local}
-      onClose={() => setShowRevisionHistory(false)}
-    />
+    <div style={{ overflowY: "auto", height: "100%" }}>
+      <RevisionHistory
+        documentId={documentId}
+        documentTitle={title}
+        globalOperations={document.operations.global}
+        key={documentId}
+        localOperations={document.operations.local}
+        onClose={() => setShowRevisionHistory(false)}
+      />
+    </div>
   ) : (
-    <Suspense fallback={loadingContent}>
-      <DocumentToolbar
-        onClose={onClose}
-        onExport={onExport}
-        onShowRevisionHistory={() => setShowRevisionHistory(true)}
-        onSwitchboardLinkClick={() => {}}
-        title={title}
-      />
-      <EditorComponent
-        context={context}
-        dispatch={dispatch}
-        document={updatedDocument as unknown as PHDocument}
-        error={error}
-      />
-    </Suspense>
+    <div style={{ overflowY: "auto", height: "100%" }}>
+      <Suspense fallback={loadingContent}>
+        <DocumentToolbar
+          onClose={onClose}
+          onExport={onExport}
+          onShowRevisionHistory={() => setShowRevisionHistory(true)}
+          onSwitchboardLinkClick={() => {}}
+          title={title}
+        />
+        <EditorComponent
+          context={context}
+          dispatch={dispatch}
+          document={updatedDocument as unknown as PHDocument}
+          error={error}
+        />
+      </Suspense>
+    </div>
   );
 };

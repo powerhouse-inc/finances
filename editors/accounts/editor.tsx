@@ -323,7 +323,12 @@ export default function Editor(props: IProps) {
   };
 
   return (
-    <div style={{ padding: "20px" }}>
+    <div style={{ 
+      padding: "20px",
+      minHeight: "100%",
+      display: "flex",
+      flexDirection: "column"
+    }}>
       <div
         style={{
           display: "flex",
@@ -659,6 +664,7 @@ export default function Editor(props: IProps) {
             marginTop: "20px",
             backgroundColor: "white",
             padding: "16px",
+            flex: 1
           }}
         >
           <div>
