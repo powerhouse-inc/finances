@@ -5,7 +5,7 @@ import {
   actions,
 } from "../../document-models/accounts/index.js";
 import { type AccountEntry as BaseAccountEntry } from "../../document-models/accounts/gen/types.js";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   createDocument,
   createAccount,
@@ -19,16 +19,18 @@ import {
   importTransactions,
   updateAccount as updateAccountTransactions,
 } from "../account-transactions/graphQL-operations.js";
+import { getTransactionDocument } from "../utils/financesDriveClient.js";
+import TransactionsTable from "../account-transactions/TransactionsTable.js";
 
 type AccountEntry = BaseAccountEntry;
 
 export type IProps = EditorProps<any>;
 
 export default function Editor(props: IProps) {
-  const { document, dispatch } = props;
+  const { document: doc, dispatch } = props;
   const {
     state: { global: state },
-  } = document;
+  } = doc;
 
   const [newAccount, setNewAccount] = useState<{
     name: string;
@@ -55,6 +57,28 @@ export default function Editor(props: IProps) {
     value: string;
   } | null>(null);
 
+  const tableRef = useRef<HTMLDivElement>(null);
+  const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
+  const [onShowTransactionsTable, setOnShowTransactionsTable] = useState(false);
+  const [transactionDocument, setTransactionDocument] = useState<any>(null);
+  const [accountName, setAccountName] = useState<string | null>(null);
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        tableRef.current &&
+        !tableRef.current.contains(event.target as Node)
+      ) {
+        setSelectedRowId(null);
+        setOnShowTransactionsTable(false);
+      }
+    };
+
+    window.document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      window.document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
   const handleCreateAccount = async () => {
     console.log("Creating account:", newAccount);
 
@@ -66,9 +90,9 @@ export default function Editor(props: IProps) {
     // );
     const createdAccount = await createAccount(
       client,
-      document.documentId,
+      doc.documentId,
       { ...newAccount, id: hashKey() },
-      document.driveId
+      doc.driveId
     );
     console.log("createdAccount", createdAccount);
     setNewAccount({
@@ -102,12 +126,12 @@ export default function Editor(props: IProps) {
     // );
     const result = await updateAccount(
       client,
-      document.documentId,
+      doc.documentId,
       {
         id: accountId,
         [field]: value,
       },
-      document.driveId
+      doc.driveId
     );
     console.log("returned updateAccount value", result);
     setEditingCell(null);
@@ -150,12 +174,15 @@ export default function Editor(props: IProps) {
             await createAccountTransactionsDocument(
               accountTransactionsClient,
               account.name,
-              document.driveId
+              doc.driveId
             );
 
           // Add transaction document id to account
-          await addTransactionDocumentIdToAccount(account.address, accountTransactionsDocument);
-          
+          await addTransactionDocumentIdToAccount(
+            account.address,
+            accountTransactionsDocument
+          );
+
           // Set counterparty address
           await updateAccountTransactions(
             accountTransactionsClient,
@@ -170,7 +197,7 @@ export default function Editor(props: IProps) {
             accountTransactionsClient,
             accountTransactionsDocument,
             { addresses: [account.address] },
-            document.driveId
+            doc.driveId
           );
 
           // Add transaction document id to account
@@ -184,16 +211,48 @@ export default function Editor(props: IProps) {
     );
   };
 
-  const addTransactionDocumentIdToAccount = async (address: string, transactionDocumentId: string) => {
-    const account = state.accounts.find((account: AccountEntry) => account.account === address);
+  const addTransactionDocumentIdToAccount = async (
+    address: string,
+    transactionDocumentId: string
+  ) => {
+    const account = state.accounts.find(
+      (account: AccountEntry) => account.account === address
+    );
     if (!account) {
       console.log("Account not found");
       return;
     }
-    await updateAccount(client, document.documentId, {
-      id: account.id,
-      accountTransactionsId: transactionDocumentId,
-    }, document.driveId);
+    await updateAccount(
+      client,
+      doc.documentId,
+      {
+        id: account.id,
+        accountTransactionsId: transactionDocumentId,
+      },
+      doc.driveId
+    );
+  };
+
+  const handleRowClick = async (accountId: string) => {
+    setSelectedRowId(accountId);
+    const account = state.accounts.find(
+      (account: AccountEntry) => account.id === accountId
+    );
+    setAccountName(account?.name);
+    if (!account?.accountTransactionsId) {
+      setOnShowTransactionsTable(false);
+      onShowTransactionsTable
+      return;
+    }
+
+    try {
+      const transactionDocument = await getTransactionDocument(account.accountTransactionsId);
+      setTransactionDocument(transactionDocument);
+      setOnShowTransactionsTable(true);
+    } catch (error) {
+      console.error("Error fetching transaction document:", error);
+      setOnShowTransactionsTable(false);
+    }
   };
 
   const renderEditableCell = (
@@ -256,9 +315,9 @@ export default function Editor(props: IProps) {
   const handleDeleteAccount = async (accountId: string) => {
     const result = await deleteAccount(
       client,
-      document.documentId,
+      doc.documentId,
       { id: accountId },
-      document.driveId
+      doc.driveId
     );
     console.log("returned deleteAccount value", result);
   };
@@ -312,6 +371,7 @@ export default function Editor(props: IProps) {
 
       {/* Table Container */}
       <div
+        ref={tableRef}
         style={{
           width: "100%",
           overflowX: "auto",
@@ -324,7 +384,7 @@ export default function Editor(props: IProps) {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "1fr 1.5fr 1fr 1fr 1fr 1fr 1fr 80px",
+            gridTemplateColumns: "60px 1fr 1.5fr 1fr 1fr 1fr 1fr 1fr 80px",
             minWidth: "1200px",
             gap: "8px",
             padding: "8px 4px",
@@ -333,6 +393,7 @@ export default function Editor(props: IProps) {
             backgroundColor: "#f8f9fa",
           }}
         >
+          <div style={{ textAlign: "center" }}>ID</div>
           <div style={{ textAlign: "center" }}>Name</div>
           <div style={{ textAlign: "center" }}>Address</div>
           <div style={{ textAlign: "center" }}>Type</div>
@@ -344,19 +405,25 @@ export default function Editor(props: IProps) {
         </div>
 
         {/* Table Body */}
-        {state.accounts.map((account: AccountEntry) => (
+        {state.accounts.map((account: AccountEntry, index: number) => (
           <div
             key={account.id}
+            onClick={() => handleRowClick(account.id)}
             style={{
               display: "grid",
-              gridTemplateColumns: "1fr 1.5fr 1fr 1fr 1fr 1fr 1fr 80px",
+              gridTemplateColumns: "60px 1fr 1.5fr 1fr 1fr 1fr 1fr 1fr 80px",
               minWidth: "1200px",
               gap: "8px",
               padding: "8px 4px",
               borderBottom: "1px solid #eee",
               alignItems: "center",
+              cursor: "pointer",
+              backgroundColor:
+                selectedRowId === account.id ? "#e3f2fd" : "transparent",
+              transition: "background-color 0.2s ease",
             }}
           >
+            <div style={{ textAlign: "center" }}>{index + 1}</div>
             {renderEditableCell(account, "name", account.name)}
             {renderEditableCell(account, "account", account.account)}
             {renderEditableCell(account, "type", account.type)}
@@ -369,7 +436,10 @@ export default function Editor(props: IProps) {
             )}
             {renderEditableCell(account, "owners", account.owners?.join(", "))}
             <button
-              onClick={() => handleDeleteAccount(account.id)}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDeleteAccount(account.id);
+              }}
               style={{
                 padding: "4px 8px",
                 backgroundColor: "#dc3545",
@@ -580,6 +650,25 @@ export default function Editor(props: IProps) {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+      {onShowTransactionsTable && (
+        <div
+          style={{
+            marginTop: "20px",
+            backgroundColor: "white",
+            padding: "16px",
+          }}
+        >
+          <div>
+            <h2>{accountName} Account Transactions</h2>
+          </div>
+          <div>
+            <TransactionsTable
+              account={transactionDocument.state.account}
+              transactions={transactionDocument.state.transactions}
+            />
           </div>
         </div>
       )}

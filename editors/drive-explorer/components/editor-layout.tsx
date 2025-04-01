@@ -107,9 +107,12 @@ export function EditorLayout({
             open={openModal}
           />
           <div className="flex gap-2 mt-4">
-            {driveNodes.map((node) => (
+            {driveNodes.map((node: any) => (
               <Button
                 size="small"
+                style={{
+                  backgroundColor: node.documentType === "powerhouse/account-transactions" ? "#808080" : "#007BFF",
+                }}
                 key={node.id}
                 onClick={() => {
                   setActiveNodeId(node.id);
