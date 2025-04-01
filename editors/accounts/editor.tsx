@@ -58,15 +58,19 @@ export default function Editor(props: IProps) {
   } | null>(null);
 
   const tableRef = useRef<HTMLDivElement>(null);
+  const transactionsTableRef = useRef<HTMLDivElement>(null);
   const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
   const [onShowTransactionsTable, setOnShowTransactionsTable] = useState(false);
   const [transactionDocument, setTransactionDocument] = useState<any>(null);
   const [accountName, setAccountName] = useState<string | null>(null);
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
         tableRef.current &&
-        !tableRef.current.contains(event.target as Node)
+        !tableRef.current.contains(event.target as Node) &&
+        transactionsTableRef.current &&
+        !transactionsTableRef.current.contains(event.target as Node)
       ) {
         setSelectedRowId(null);
         setOnShowTransactionsTable(false);
@@ -241,7 +245,6 @@ export default function Editor(props: IProps) {
     setAccountName(account?.name);
     if (!account?.accountTransactionsId) {
       setOnShowTransactionsTable(false);
-      onShowTransactionsTable
       return;
     }
 
@@ -660,6 +663,7 @@ export default function Editor(props: IProps) {
       )}
       {onShowTransactionsTable && (
         <div
+          ref={transactionsTableRef}
           style={{
             marginTop: "20px",
             backgroundColor: "white",

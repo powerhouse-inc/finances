@@ -111,7 +111,7 @@ export function EditorLayout({
               <Button
                 size="small"
                 style={{
-                  backgroundColor: node.documentType === "powerhouse/account-transactions" ? "#808080" : "#007BFF",
+                  backgroundColor: node.documentType === "powerhouse/account-transactions" ? "#808080" : "black",
                 }}
                 key={node.id}
                 onClick={() => {
