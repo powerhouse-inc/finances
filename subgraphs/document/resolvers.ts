@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { type Subgraph } from "@powerhousedao/reactor-api";
@@ -25,7 +24,7 @@ export const getResolvers = (subgraph: Subgraph) => {
           id: docId,
           ...doc,
           state: doc.state.global,
-          stateJson: JSON.stringify(doc.state.global),
+          stateJSON: doc.state.global,
           __typename: typeName,
         };
 
