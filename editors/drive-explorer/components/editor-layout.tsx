@@ -94,7 +94,7 @@ export function EditorLayout({
       <div className="flex-1 bg-gray-50 p-4 dark:bg-slate-800">
         <>
           <h1 className="text-xl font-bold mb-4">Finances Explorer</h1>
-          <p className="mb-4">Welcome to your financial documents drive.</p>
+          <p className="mb-4">Track your accounts & transactions</p>
           <CreateDocument
             /* @ts-expect-error */
             createDocument={onSelectDocumentModel}

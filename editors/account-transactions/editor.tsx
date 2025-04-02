@@ -4,7 +4,7 @@ import {
   actions,
 } from "../../document-models/account-transactions/index.js";
 import { useState, useEffect } from "react";
-import { Button } from "@powerhousedao/design-system";
+import { Button, toast, ToastContainer } from "@powerhousedao/design-system";
 import { client } from "./apollo-client.js";
 import {
   createTransaction,
@@ -120,10 +120,25 @@ export default function Editor(props: IProps) {
 
     setShowImportModal(false);
     setEthereumAddress("");
+    toast("Transactions imported", {
+      type: "success",
+    });
   };
 
   return (
     <div style={{ padding: "20px" }}>
+      <ToastContainer
+        position="bottom-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick={false}
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
       {/* Account Info */}
       <div style={{ marginBottom: "24px" }}>
         <div

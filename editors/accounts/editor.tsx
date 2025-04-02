@@ -21,6 +21,7 @@ import {
 } from "../account-transactions/graphQL-operations.js";
 import { getTransactionDocument } from "../utils/financesDriveClient.js";
 import TransactionsTable from "../account-transactions/TransactionsTable.js";
+import { toast, ToastContainer } from "@powerhousedao/design-system";
 
 type AccountEntry = BaseAccountEntry;
 
@@ -213,6 +214,9 @@ export default function Editor(props: IProps) {
       "created and imported transactions",
       accountTransactionsDocuments
     );
+    toast("Transactions tracked", {
+      type: "success",
+    });
   };
 
   const addTransactionDocumentIdToAccount = async (
@@ -249,7 +253,9 @@ export default function Editor(props: IProps) {
     }
 
     try {
-      const transactionDocument = await getTransactionDocument(account.accountTransactionsId);
+      const transactionDocument = await getTransactionDocument(
+        account.accountTransactionsId
+      );
       setTransactionDocument(transactionDocument);
       setOnShowTransactionsTable(true);
     } catch (error) {
@@ -326,12 +332,26 @@ export default function Editor(props: IProps) {
   };
 
   return (
-    <div style={{ 
-      padding: "20px",
-      minHeight: "100%",
-      display: "flex",
-      flexDirection: "column"
-    }}>
+    <div
+      style={{
+        padding: "20px",
+        minHeight: "100%",
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
+      <ToastContainer
+        position="bottom-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick={false}
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
       <div
         style={{
           display: "flex",
@@ -668,7 +688,7 @@ export default function Editor(props: IProps) {
             marginTop: "20px",
             backgroundColor: "white",
             padding: "16px",
-            flex: 1
+            flex: 1,
           }}
         >
           <div>
