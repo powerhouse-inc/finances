@@ -45,6 +45,18 @@ export const schema: DocumentNode = gql`
   }
 
   """
+  Queries: AccountTransactions
+  """
+  type AccountTransactionsQueries {
+    getDocument(driveId: String, docId: PHID): AccountTransactions
+    getDocuments: [AccountTransactions!]
+  }
+
+  type Query {
+    AccountTransactions: AccountTransactionsQueries
+  }
+
+  """
   Mutations: AccountTransactions
   """
   type Mutation {

@@ -12,6 +12,38 @@ export const getResolvers = (subgraph: Subgraph) => {
   const reactor = subgraph.reactor;
 
   return {
+    Query: {
+      Accounts: async (_: any, args: any) => {
+        return {
+          getDocument: async (_: any, args: any) => {
+            const driveId: string = args.driveId || DEFAULT_DRIVE_ID;
+            const docId: string = args.docId || "";
+            const doc = await reactor.getDocument(driveId, docId);
+            return doc;
+          },
+          getDocuments: async (_: any, args: any) => {
+            const driveId: string = args.driveId || DEFAULT_DRIVE_ID;
+            const docsIds = await reactor.getDocuments(driveId);
+            const docs = await Promise.all(
+              docsIds.map(async (docId) => {
+                const doc = await reactor.getDocument(driveId, docId);
+                return {
+                  id: docId,
+                  driveId: driveId,
+                  ...doc,
+                  state: doc.state.global,
+                  revision: doc.revision.global,
+                };
+              })
+            );
+
+            return docs.filter(
+              (doc) => doc.documentType === "powerhouse/accounts"
+            );
+          },
+        };
+      },
+    },
     Mutation: {
       Accounts_createDocument: async (_: any, args: any) => {
         const driveId: string = args.driveId || DEFAULT_DRIVE_ID;
@@ -35,7 +67,7 @@ export const getResolvers = (subgraph: Subgraph) => {
                 syncId: hashKey(),
               },
             ],
-          }),
+          })
         );
 
         return docId;
@@ -49,7 +81,7 @@ export const getResolvers = (subgraph: Subgraph) => {
         await reactor.addAction(
           driveId,
           docId,
-          actions.createAccount({ ...args.input }),
+          actions.createAccount({ ...args.input })
         );
 
         return doc.revision.global + 1;
@@ -63,7 +95,7 @@ export const getResolvers = (subgraph: Subgraph) => {
         await reactor.addAction(
           driveId,
           docId,
-          actions.updateAccount({ ...args.input }),
+          actions.updateAccount({ ...args.input })
         );
 
         return doc.revision.global + 1;
@@ -77,7 +109,7 @@ export const getResolvers = (subgraph: Subgraph) => {
         await reactor.addAction(
           driveId,
           docId,
-          actions.deleteAccount({ ...args.input }),
+          actions.deleteAccount({ ...args.input })
         );
 
         return doc.revision.global + 1;
