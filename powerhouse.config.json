@@ -7,9 +7,9 @@
   "reactor": {
     "port": 4001
   },
-  "packages": [	
+  "packages": [
     {
-      "packageName": "finances"
+      "packageName": "@sky-ph/atlas"
     }
   ]
 }
