@@ -2,7 +2,7 @@ import { ApolloClient, InMemoryCache, createHttpLink } from '@apollo/client';
 import { setContext } from '@apollo/client/link/context';
 
 const httpLink = createHttpLink({
-  uri: 'http://localhost:4001/account-transactions',
+  uri: 'http://localhost:4001/graphql/account-transactions',
 });
 
 // Create an auth link that adds any necessary headers

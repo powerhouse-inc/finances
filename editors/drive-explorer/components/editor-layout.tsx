@@ -54,26 +54,39 @@ export function EditorLayout({
     async (fileName: string) => {
       setOpenModal(false);
 
+      // const documentModel = selectedDocumentModel.current;
+      // if (!documentModel) return;
+
+      // console.log('documentModel.documentModel.id', documentModel.documentModel.id)
+      // let nodeId;
+      // if(documentModel.documentModel.id === "powerhouse/accounts") {
+      //   const accountsDocument: any = await createAccountsDocument(client, fileName, driveId);
+      //   console.log('accountsDocument', accountsDocument)
+      //   nodeId = accountsDocument
+      // }
+      // if(documentModel.documentModel.id === "powerhouse/account-transactions") {
+      //   const accountTransactionsDocument = await createAccountTransactionsDocument(accountTransactionsClient, fileName, driveId);
+      //   console.log('accountTransactionsDocument', accountTransactionsDocument)
+      //   nodeId = accountTransactionsDocument;
+      // }
+
+      // selectedDocumentModel.current = null;
+      // // Fetch both the new document's state and the drive document's state
+      // await fetchDocuments(driveId, [nodeId, driveId]);
+      // setActiveNodeId(nodeId);
+
       const documentModel = selectedDocumentModel.current;
       if (!documentModel) return;
 
-      console.log('documentModel.documentModel.id', documentModel.documentModel.id)
-      let nodeId;
-      if(documentModel.documentModel.id === "powerhouse/accounts") {
-        const accountsDocument: any = await createAccountsDocument(client, fileName, driveId);
-        console.log('accountsDocument', accountsDocument)
-        nodeId = accountsDocument
-      }
-      if(documentModel.documentModel.id === "powerhouse/account-transactions") {
-        const accountTransactionsDocument = await createAccountTransactionsDocument(accountTransactionsClient, fileName, driveId);
-        console.log('accountTransactionsDocument', accountTransactionsDocument)
-        nodeId = accountTransactionsDocument;
-      }
+      const node = await addDocument(
+        driveId,
+        fileName,
+        documentModel.documentModel.id
+      );
 
       selectedDocumentModel.current = null;
-      // Fetch both the new document's state and the drive document's state
-      await fetchDocuments(driveId, [nodeId, driveId]);
-      setActiveNodeId(nodeId);
+      await fetchDocuments(driveId, [node.id]);
+      setActiveNodeId(node.id);
     },
     [addDocument, driveId, setActiveNodeId]
   );
