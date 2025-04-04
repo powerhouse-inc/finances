@@ -50,7 +50,6 @@
   },
   "dependencies": {
     "@powerhousedao/design-system": "dev",
-    "@sky-ph/atlas": "dev",
     "document-model": "^2.27.1",
     "error": "^10.4.0",
     "graphql": "^16.10.0",
