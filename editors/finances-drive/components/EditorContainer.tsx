@@ -16,6 +16,9 @@ import {
   DefaultEditorLoader,
 } from "@powerhousedao/design-system";
 import { useState, Suspense, type FC, useCallback, lazy } from "react";
+import {
+  AccountTransactions, Accounts,
+} from "../../../document-models/index.js";
 
 export interface EditorContainerProps {
   driveId: string;
@@ -27,11 +30,23 @@ export interface EditorContainerProps {
 }
 
 const documentModelsMap = {
+  [AccountTransactions.documentModel.id]: AccountTransactions,
+  [Accounts.documentModel.id]: Accounts,
   [documentModelDocumentModelModule.documentModel.id]:
     documentModelDocumentModelModule,
 };
 
 const documentEditorMap = {
+  [AccountTransactions.documentModel.id]: lazy(() =>
+    import("../../account-transactions/index.js").then((m) => ({
+      default: m.default.Component,
+    })),
+  ),
+  [Accounts.documentModel.id]: lazy(() =>
+    import("../../accounts/index.js").then((m) => ({
+      default: m.default.Component,
+    })),
+  ),
   [documentModelDocumentModelModule.documentModel.id]: lazy(() =>
     import("@powerhousedao/builder-tools/style.css").then(() =>
       import("@powerhousedao/builder-tools/document-model-editor").then(
