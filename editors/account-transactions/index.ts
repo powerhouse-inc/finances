@@ -6,7 +6,7 @@ export const module: EditorModule<AccountTransactionsDocument> = {
   Component: Editor,
   documentTypes: ["powerhouse/account-transactions"],
   config: {
-    id: "AccountTransactions",
+    id: "account-transactions-editor",
     disableExternalControls: true,
     documentToolbarEnabled: true,
     showSwitchboardLink: true,

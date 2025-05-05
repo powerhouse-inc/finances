@@ -6,22 +6,29 @@ import { addFile } from "document-drive";
 import { actions } from "../../document-models/accounts/index.js";
 import { generateId, hashKey } from "document-model";
 
-const DEFAULT_DRIVE_ID = "finances_accs_txs";
+const DEFAULT_DRIVE_ID = "powerhouse";
 
-export const getResolvers = (subgraph: Subgraph) => {
+export const getResolvers = (subgraph: Subgraph): Record<string, any> => {
   const reactor = subgraph.reactor;
 
   return {
     Query: {
-      Accounts: async (_: any, args: any) => {
+      Accounts: async (_: any, args: any, ctx: any) => {
         return {
-          getDocument: async (_: any, args: any) => {
+          getDocument: async (args: any) => {
             const driveId: string = args.driveId || DEFAULT_DRIVE_ID;
             const docId: string = args.docId || "";
             const doc = await reactor.getDocument(driveId, docId);
-            return doc;
+            return {
+              id: docId,
+              driveId: driveId,
+              ...doc,
+              state: doc.state.global,
+              stateJSON: doc.state.global,
+              revision: doc.revision.global,
+            };
           },
-          getDocuments: async (_: any, args: any) => {
+          getDocuments: async (args: any) => {
             const driveId: string = args.driveId || DEFAULT_DRIVE_ID;
             const docsIds = await reactor.getDocuments(driveId);
             const docs = await Promise.all(
@@ -32,13 +39,14 @@ export const getResolvers = (subgraph: Subgraph) => {
                   driveId: driveId,
                   ...doc,
                   state: doc.state.global,
+                  stateJSON: doc.state.global,
                   revision: doc.revision.global,
                 };
-              })
+              }),
             );
 
             return docs.filter(
-              (doc) => doc.documentType === "powerhouse/accounts"
+              (doc) => doc.documentType === "powerhouse/accounts",
             );
           },
         };
@@ -67,7 +75,7 @@ export const getResolvers = (subgraph: Subgraph) => {
                 syncId: hashKey(),
               },
             ],
-          })
+          }),
         );
 
         return docId;
@@ -81,7 +89,7 @@ export const getResolvers = (subgraph: Subgraph) => {
         await reactor.addAction(
           driveId,
           docId,
-          actions.createAccount({ ...args.input })
+          actions.createAccount({ ...args.input }),
         );
 
         return doc.revision.global + 1;
@@ -95,7 +103,7 @@ export const getResolvers = (subgraph: Subgraph) => {
         await reactor.addAction(
           driveId,
           docId,
-          actions.updateAccount({ ...args.input })
+          actions.updateAccount({ ...args.input }),
         );
 
         return doc.revision.global + 1;
@@ -109,7 +117,7 @@ export const getResolvers = (subgraph: Subgraph) => {
         await reactor.addAction(
           driveId,
           docId,
-          actions.deleteAccount({ ...args.input })
+          actions.deleteAccount({ ...args.input }),
         );
 
         return doc.revision.global + 1;

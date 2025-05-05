@@ -1,27 +1,22 @@
-import { type EditorProps, hashKey } from "document-model";
+import { useState } from "react";
+import type { EditorProps } from "document-model";
 import {
   type AccountTransactionsDocument,
   actions,
 } from "../../document-models/account-transactions/index.js";
-import { useState, useEffect } from "react";
-import { Button, toast, ToastContainer } from "@powerhousedao/design-system";
-import { client } from "./apollo-client.js";
-import {
-  createTransaction,
-  updateAccount,
-  deleteTransaction,
-  importTransactions,
-} from "./graphQL-operations.js";
 import TransactionsTable from "./TransactionsTable.js";
-
-export type IProps = EditorProps<any>;
+import { Button, toast, ToastContainer } from "@powerhousedao/design-system";
+import { generateId } from "document-model";
+export type IProps = EditorProps<AccountTransactionsDocument>;
 
 export default function Editor(props: IProps) {
   const { document, dispatch } = props;
-  const { state } = document;
-  const transactions = state.global?.transactions || [];
-  const account = state.global?.account;
-  console.log("Transactions Account", account?.username);
+  const {
+    state: {
+      global: { transactions, account },
+    },
+  } = document;
+  
 
   const [hasEditedAccount, setHasEditedAccount] = useState(false);
   const [newUsername, setNewUsername] = useState(account?.username || "");
@@ -38,53 +33,35 @@ export default function Editor(props: IProps) {
     },
   });
 
+
   const [showTransactionForm, setShowTransactionForm] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    try {
-      // dispatch(
-      //   actions.createTransaction({
-      //     counterParty: newTransaction.counterParty,
-      //     amount: parseFloat(newTransaction.amount),
-      //     datetime: new Date().toISOString(),
-      //     details: {
-      //       txHash: newTransaction.details.txHash,
-      //       token: newTransaction.details.token,
-      //       blockNumber: parseInt(newTransaction.details.blockNumber) || null,
-      //     },
-      //   })
-      // );
-      const createdTransaction = await createTransaction(
-        client,
-        document.documentId,
-        {
-          counterParty: newTransaction.counterParty,
-          amount: parseFloat(newTransaction.amount),
-          datetime: new Date().toISOString(),
-          details: {
-            txHash: newTransaction.details.txHash,
-            token: newTransaction.details.token,
-            blockNumber: parseInt(newTransaction.details.blockNumber),
-          },
-        }
-      );
-      console.log("createdTransaction", createdTransaction);
-
-      setNewTransaction({
-        counterParty: "",
-        amount: "",
+    dispatch(
+      actions.createTransaction({
+        id: generateId(),
+        counterParty: newTransaction.counterParty,
+        amount: parseFloat(newTransaction.amount),
+        datetime: new Date().toISOString(),
         details: {
-          txHash: "",
-          token: "",
-          blockNumber: "",
+          txHash: newTransaction.details.txHash,
+          token: newTransaction.details.token,
+          blockNumber: parseInt(newTransaction.details.blockNumber) || null,
         },
-      });
-      setShowTransactionForm(false);
-    } catch (error) {
-      console.error("Error creating transaction:", error);
-    }
+      })
+    );
+    setNewTransaction({
+      counterParty: "",
+      amount: "",
+      details: {
+        txHash: "",
+        token: "",
+        blockNumber: "",
+      },
+    });
+    setShowTransactionForm(false);
   };
 
   const handleUpdateAccount = async (e: React.FormEvent) => {
@@ -107,22 +84,29 @@ export default function Editor(props: IProps) {
     e.preventDefault();
 
     console.log("Stored Ethereum address:", ethereumAddress);
-    await updateAccount(client, document.documentId, {
-      account: ethereumAddress,
-    });
 
-    const importedTransactions = await importTransactions(
-      client,
-      document.documentId,
-      { addresses: [ethereumAddress] }
+    dispatch(
+      actions.updateAccount({
+        account: ethereumAddress,
+      })
     );
-    console.log("importedTransactions", importedTransactions);
+
+    // const importedTransactions = await importTransactions(
+    //   client,
+    //   document.documentId,
+    //   { addresses: [ethereumAddress] }
+    // );
+    // console.log("importedTransactions", importedTransactions);
 
     setShowImportModal(false);
     setEthereumAddress("");
     toast("Transactions imported", {
       type: "success",
     });
+  };
+
+  const handleDeleteTransaction = (id: string) => {
+    dispatch(actions.deleteTransaction({ id }));
   };
 
   return (
@@ -524,7 +508,8 @@ export default function Editor(props: IProps) {
 
       <TransactionsTable
         transactions={transactions}
-        account={account}
+        account={account || {}}
+        handleDeleteTransaction={handleDeleteTransaction}
       />
 
       {/* TODO: Add modal for new transaction form */}

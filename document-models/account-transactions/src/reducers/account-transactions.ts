@@ -3,8 +3,6 @@
  * - modify it by implementing the reducer functions
  * - delete the file and run the code generator again to have it reset
  */
-
-import { hashKey } from "document-model";
 import type { AccountTransactionsAccountTransactionsOperations } from "../../gen/account-transactions/operations.js";
 
 export const reducer: AccountTransactionsAccountTransactionsOperations = {
@@ -14,7 +12,7 @@ export const reducer: AccountTransactionsAccountTransactionsOperations = {
       state.transactions = [];
     }
 
-    state.transactions.push({
+    const newTransaction = {
       id: action.input.id,
       counterParty: action.input.counterParty || null,
       amount: action.input.amount,
@@ -25,13 +23,15 @@ export const reducer: AccountTransactionsAccountTransactionsOperations = {
         blockNumber: action.input.details.blockNumber || null
       },
       budget: action.input.budget || null
-    });
+    };
+
+    state.transactions.push(newTransaction);
   },
 
   updateTransactionOperation(state, action, dispatch) {
-    const transaction = state.transactions.find(tx => tx.id === action.input.id);
+    const transaction = state.transactions.find(tx => tx.details?.txHash === action.input.details?.txHash);
     if (!transaction) {
-      throw new Error(`Transaction with id ${action.input.id} not found`);
+      throw new Error(`Transaction with id ${action.input.details?.txHash} not found`);
     }
 
     if (action.input.counterParty !== undefined) {
@@ -74,15 +74,13 @@ export const reducer: AccountTransactionsAccountTransactionsOperations = {
 
   updateAccountOperation(state, action, dispatch) {
     // Initialize account if it doesn't exist
-    if (!state.account) {
+    if (state.account?.username !== action.input.account) {
       state.account = {
-        id: hashKey(),
+        id: 'accountId',
         username: action.input.account || null,
         type: "CONTRIBUTOR",
         icon: null
       };
     }
-
-    state.account.username = action.input.account || null;
   },
 };

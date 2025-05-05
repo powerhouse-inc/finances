@@ -1,5 +1,3 @@
-import { useState, useEffect, useRef } from "react";
-
 interface Transaction {
   id: string;
   [key: string]: any;
@@ -8,11 +6,13 @@ interface Transaction {
 interface TransactionsTableProps {
   transactions: Transaction[];
   account: Record<string, any>;
+  handleDeleteTransaction: (id: string) => void;
 }
 
 export default function TransactionsTable({
   transactions,
   account,
+  handleDeleteTransaction,
 }: TransactionsTableProps) {
   return (
     <div style={{ maxHeight: "600px", overflowY: "auto" }}>
@@ -94,9 +94,7 @@ export default function TransactionsTable({
               <td style={{ padding: "12px 8px" }}>{tx.budget || ""}</td>
               <td style={{ padding: "12px 8px" }}>
                 <button
-                  onClick={() => {
-                    /* TODO: Delete transaction */
-                  }}
+                  onClick={() => handleDeleteTransaction(tx.id)}
                   style={{
                     background: "none",
                     border: "none",

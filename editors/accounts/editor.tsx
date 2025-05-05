@@ -1,31 +1,17 @@
-import { type EditorProps, hashKey } from "document-model";
+import type { EditorProps } from "document-model";
+import { useState, useEffect, useRef } from "react";
 import {
   type AccountsDocument,
   type AccountType,
-  actions,
+  actions as accountsActions,
 } from "../../document-models/accounts/index.js";
-import { type AccountEntry as BaseAccountEntry } from "../../document-models/accounts/gen/types.js";
-import { useState, useEffect, useRef } from "react";
-import {
-  createDocument,
-  createAccount,
-  updateAccount,
-  deleteAccount,
-} from "./gaphQL-operations.js";
-import { client } from "./apollo-client.js";
-import { client as accountTransactionsClient } from "../account-transactions/apollo-client.js";
-import {
-  createDocument as createAccountTransactionsDocument,
-  importTransactions,
-  updateAccount as updateAccountTransactions,
-} from "../account-transactions/graphQL-operations.js";
-import { getTransactionDocument } from "../utils/financesDriveClient.js";
-import TransactionsTable from "../account-transactions/TransactionsTable.js";
+import { actions as accountTransactionsActions } from "../../document-models/account-transactions/index.js";
+import type { AccountEntry } from "../../document-models/accounts/gen/types.js";
+import { generateId } from "document-model";
 import { toast, ToastContainer } from "@powerhousedao/design-system";
+import TransactionsTable from "../account-transactions/TransactionsTable.js";
 
-type AccountEntry = BaseAccountEntry;
-
-export type IProps = EditorProps<any>;
+export type IProps = EditorProps<AccountsDocument>;
 
 export default function Editor(props: IProps) {
   const { document: doc, dispatch } = props;
@@ -87,19 +73,13 @@ export default function Editor(props: IProps) {
   const handleCreateAccount = async () => {
     console.log("Creating account:", newAccount);
 
-    // dispatch(
-    //   actions.createAccount({
-    //     id: hashKey(),
-    //     ...newAccount,
-    //   })
-    // );
-    const createdAccount = await createAccount(
-      client,
-      doc.documentId,
-      { ...newAccount, id: hashKey() },
-      doc.driveId
+    dispatch(
+      accountsActions.createAccount({
+        id: generateId(),
+        ...newAccount,
+      })
     );
-    console.log("createdAccount", createdAccount);
+
     setNewAccount({
       name: "",
       account: "",
@@ -123,22 +103,13 @@ export default function Editor(props: IProps) {
     if (!editingCell) return;
 
     const { accountId, field, value } = editingCell;
-    // dispatch(
-    //   actions.updateAccount({
-    //     id: accountId,
-    //     [field]: value,
-    //   })
-    // );
-    const result = await updateAccount(
-      client,
-      doc.documentId,
-      {
+    dispatch(
+      accountsActions.updateAccount({
         id: accountId,
         [field]: value,
-      },
-      doc.driveId
+      })
     );
-    console.log("returned updateAccount value", result);
+
     setEditingCell(null);
   };
 
@@ -170,50 +141,51 @@ export default function Editor(props: IProps) {
       console.log("No accounts to track");
       return;
     }
-    // Create account transactions document for each account and import transactions
-    const accountTransactionsDocuments = await Promise.all(
-      accountAddresses.map(
-        async (account: { address: string; name: string }) => {
-          // Create account transactions document
-          const accountTransactionsDocument =
-            await createAccountTransactionsDocument(
-              accountTransactionsClient,
-              account.name,
-              doc.driveId
-            );
 
-          // Add transaction document id to account
-          await addTransactionDocumentIdToAccount(
-            account.address,
-            accountTransactionsDocument
-          );
+    // // Create account transactions document for each account and import transactions
+    // const accountTransactionsDocuments = await Promise.all(
+    //   accountAddresses.map(
+    //     async (account: { address: string; name: string }) => {
+    //       // Create account transactions document
+    //       const accountTransactionsDocument =
+    //         await createAccountTransactionsDocument(
+    //           accountTransactionsClient,
+    //           account.name,
+    //           doc.driveId
+    //         );
 
-          // Set counterparty address
-          await updateAccountTransactions(
-            accountTransactionsClient,
-            accountTransactionsDocument,
-            {
-              account: account.address,
-            }
-          );
+    //       // Add transaction document id to account
+    //       await addTransactionDocumentIdToAccount(
+    //         account.address,
+    //         accountTransactionsDocument
+    //       );
 
-          // Import transactions
-          const result = await importTransactions(
-            accountTransactionsClient,
-            accountTransactionsDocument,
-            { addresses: [account.address] },
-            doc.driveId
-          );
+    //       // Set counterparty address
+    //       await updateAccountTransactions(
+    //         accountTransactionsClient,
+    //         accountTransactionsDocument,
+    //         {
+    //           account: account.address,
+    //         }
+    //       );
 
-          // Add transaction document id to account
-          return result;
-        }
-      )
-    );
-    console.log(
-      "created and imported transactions",
-      accountTransactionsDocuments
-    );
+    //       // Import transactions
+    //       const result = await importTransactions(
+    //         accountTransactionsClient,
+    //         accountTransactionsDocument,
+    //         { addresses: [account.address] },
+    //         doc.driveId
+    //       );
+
+    //       // Add transaction document id to account
+    //       return result;
+    //     }
+    //   )
+    // );
+    // console.log(
+    //   "created and imported transactions",
+    //   accountTransactionsDocuments
+    // );
     toast("Transactions tracked", {
       type: "success",
     });
@@ -230,15 +202,15 @@ export default function Editor(props: IProps) {
       console.log("Account not found");
       return;
     }
-    await updateAccount(
-      client,
-      doc.documentId,
-      {
-        id: account.id,
-        accountTransactionsId: transactionDocumentId,
-      },
-      doc.driveId
-    );
+    // await updateAccount(
+    //   client,
+    //   doc.documentId,
+    //   {
+    //     id: account.id,
+    //     accountTransactionsId: transactionDocumentId,
+    //   },
+    //   doc.driveId
+    // );
   };
 
   const handleRowClick = async (accountId: string) => {
@@ -246,16 +218,16 @@ export default function Editor(props: IProps) {
     const account = state.accounts.find(
       (account: AccountEntry) => account.id === accountId
     );
-    setAccountName(account?.name);
+    setAccountName(account?.name || null);
     if (!account?.accountTransactionsId) {
       setOnShowTransactionsTable(false);
       return;
     }
 
     try {
-      const transactionDocument = await getTransactionDocument(
-        account.accountTransactionsId
-      );
+      // const transactionDocument = await getTransactionDocument(
+      //   account.accountTransactionsId
+      // );
       setTransactionDocument(transactionDocument);
       setOnShowTransactionsTable(true);
     } catch (error) {
@@ -322,13 +294,15 @@ export default function Editor(props: IProps) {
   };
 
   const handleDeleteAccount = async (accountId: string) => {
-    const result = await deleteAccount(
-      client,
-      doc.documentId,
-      { id: accountId },
-      doc.driveId
+    dispatch(accountsActions.deleteAccount({ id: accountId }));
+  };
+
+  const handleDeleteTransaction = async (transactionId: string) => {
+    dispatch(
+      accountTransactionsActions.deleteTransaction({
+        id: transactionId,
+      }) as any
     );
-    console.log("returned deleteAccount value", result);
   };
 
   return (
@@ -698,6 +672,7 @@ export default function Editor(props: IProps) {
             <TransactionsTable
               account={transactionDocument.state.account}
               transactions={transactionDocument.state.transactions}
+              handleDeleteTransaction={handleDeleteTransaction}
             />
           </div>
         </div>

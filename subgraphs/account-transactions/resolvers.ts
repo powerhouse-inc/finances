@@ -5,41 +5,30 @@ import { type Subgraph } from "@powerhousedao/reactor-api";
 import { addFile } from "document-drive";
 import { actions } from "../../document-models/account-transactions/index.js";
 import { generateId, hashKey } from "document-model";
-import { pullAlchemyData } from "../../commands/import-example/utils/pullAlchemyData.js";
-import { CreateTransactionInput } from "../../document-models/account-transactions/index.js";
 
-const DEFAULT_DRIVE_ID = "finances_accs_txs";
+const DEFAULT_DRIVE_ID = "powerhouse";
 
-type ResultType = {
-  blockNum: string;
-  uniqueId: string;
-  hash: string;
-  from: string;
-  to: string;
-  value: number;
-  erc721TokenId: string | null;
-  erc1155Metadata: any | null;
-  tokenId: string | null;
-  asset: string;
-  category: string;
-  rawContract: Record<string, any>;
-  blockTimestamp: string;
-};
-
-export const getResolvers = (subgraph: Subgraph) => {
+export const getResolvers = (subgraph: Subgraph): Record<string, any> => {
   const reactor = subgraph.reactor;
 
   return {
     Query: {
-      AccountTransactions: async (_: any, args: any) => {
+      AccountTransactions: async (_: any, args: any, ctx: any) => {
         return {
-          getDocument: async (_: any, args: any) => {
+          getDocument: async (args: any) => {
             const driveId: string = args.driveId || DEFAULT_DRIVE_ID;
             const docId: string = args.docId || "";
             const doc = await reactor.getDocument(driveId, docId);
-            return doc;
+            return {
+              id: docId,
+              driveId: driveId,
+              ...doc,
+              state: doc.state.global,
+              stateJSON: doc.state.global,
+              revision: doc.revision.global,
+            };
           },
-          getDocuments: async (_: any, args: any) => {
+          getDocuments: async (args: any) => {
             const driveId: string = args.driveId || DEFAULT_DRIVE_ID;
             const docsIds = await reactor.getDocuments(driveId);
             const docs = await Promise.all(
@@ -50,13 +39,14 @@ export const getResolvers = (subgraph: Subgraph) => {
                   driveId: driveId,
                   ...doc,
                   state: doc.state.global,
+                  stateJSON: doc.state.global,
                   revision: doc.revision.global,
                 };
-              })
+              }),
             );
 
             return docs.filter(
-              (doc) => doc.documentType === "powerhouse/account-transactions"
+              (doc) => doc.documentType === "powerhouse/account-transactions",
             );
           },
         };
@@ -85,7 +75,7 @@ export const getResolvers = (subgraph: Subgraph) => {
                 syncId: hashKey(),
               },
             ],
-          })
+          }),
         );
 
         return docId;
@@ -99,7 +89,7 @@ export const getResolvers = (subgraph: Subgraph) => {
         await reactor.addAction(
           driveId,
           docId,
-          actions.createTransaction({ ...args.input })
+          actions.createTransaction({ ...args.input }),
         );
 
         return doc.revision.global + 1;
@@ -113,7 +103,7 @@ export const getResolvers = (subgraph: Subgraph) => {
         await reactor.addAction(
           driveId,
           docId,
-          actions.updateTransaction({ ...args.input })
+          actions.updateTransaction({ ...args.input }),
         );
 
         return doc.revision.global + 1;
@@ -127,7 +117,7 @@ export const getResolvers = (subgraph: Subgraph) => {
         await reactor.addAction(
           driveId,
           docId,
-          actions.deleteTransaction({ ...args.input })
+          actions.deleteTransaction({ ...args.input }),
         );
 
         return doc.revision.global + 1;
@@ -135,7 +125,7 @@ export const getResolvers = (subgraph: Subgraph) => {
 
       AccountTransactions_updateTransactionBudget: async (
         _: any,
-        args: any
+        args: any,
       ) => {
         const driveId: string = args.driveId || DEFAULT_DRIVE_ID;
         const docId: string = args.docId || "";
@@ -144,7 +134,7 @@ export const getResolvers = (subgraph: Subgraph) => {
         await reactor.addAction(
           driveId,
           docId,
-          actions.updateTransactionBudget({ ...args.input })
+          actions.updateTransactionBudget({ ...args.input }),
         );
 
         return doc.revision.global + 1;
@@ -158,42 +148,9 @@ export const getResolvers = (subgraph: Subgraph) => {
         await reactor.addAction(
           driveId,
           docId,
-          actions.updateAccount({ account: args.input.account }),
+          actions.updateAccount({ ...args.input }),
         );
 
-        return doc.revision.global + 1;
-      },
-
-      AccountTransactions_importTransactions: async (_: any, args: any) => {
-        const driveId: string = args.driveId || DEFAULT_DRIVE_ID;
-        const docId: string = args.docId || "";
-        const doc = await reactor.getDocument(driveId, docId);
-
-        console.log("importing transactions for addresses", args);
-        // pull transactions from alchemy
-        const results = await pullAlchemyData(args.input.addresses);
-
-        // console.log("results", results);
-
-        // // create transactions in document
-        for (const resultArray of results) {
-          for (const result of resultArray as any) {
-            const counterPartyAddress = args.input.addresses[0].toLowerCase() === result.from.toLowerCase() ? result.to : result.from;
-            // const counterPartyAddress = result.from.toLowerCase() === args.input.addresses[0].toLowerCase() ? result.to : result.from;
-            const transactionInput: CreateTransactionInput = {
-              counterParty: result.to,
-              amount: result.value,
-              datetime: result.blockTimestamp,
-              details: {
-                txHash: result.hash,
-                token: result.asset,
-                blockNumber: parseInt(result.blockNum, 16),
-              },
-            }
-            // console.log("creating transaction", transactionInput);
-            await reactor.addAction(driveId, docId, actions.createTransaction({ ...transactionInput }));
-          }
-        }
         return doc.revision.global + 1;
       },
     },
