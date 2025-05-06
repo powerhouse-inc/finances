@@ -107,10 +107,6 @@ export const schema: DocumentNode = gql`
     blockNumber: Int
   }
 
-  input Budget {
-    id: OID!
-    name: OLabel
-  }
   input AccountTransactions_UpdateTransactionInput {
     id: ID!
     counterParty: EthereumAddress
@@ -120,16 +116,6 @@ export const schema: DocumentNode = gql`
     budget: OID
   }
 
-  input TransactionDetailsInput {
-    txHash: String
-    token: Currency
-    blockNumber: Int
-  }
-
-  input Budget {
-    id: OID!
-    name: OLabel
-  }
   input AccountTransactions_DeleteTransactionInput {
     id: ID!
   }

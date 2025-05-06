@@ -73,11 +73,6 @@ input TransactionDetailsInput {
   blockNumber: Int
 }
 
-input Budget {
-  id: OID!
-  name: OLabel
-}
-
 input UpdateTransactionInput {
   id: ID!,
   counterParty: EthereumAddress
@@ -85,17 +80,6 @@ input UpdateTransactionInput {
   datetime: DateTime
   details: TransactionDetailsInput
   budget: OID
-}
-
-input TransactionDetailsInput {
-  txHash: String
-  token: Currency
-  blockNumber: Int
-}
-
-input Budget {
-  id: OID!
-  name: OLabel
 }
 
 input DeleteTransactionInput {

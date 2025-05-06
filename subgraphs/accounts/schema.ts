@@ -77,13 +77,6 @@ export const schema: DocumentNode = gql`
     owners: [PHID]
   }
 
-  enum AccountType {
-    Protocol
-    Auditor
-    Operational
-    Payment
-    Processor
-  }
   input Accounts_UpdateAccountInput {
     id: OID!
     name: OLabel
@@ -95,13 +88,6 @@ export const schema: DocumentNode = gql`
     owners: [PHID]
   }
 
-  enum AccountType {
-    Protocol
-    Auditor
-    Operational
-    Payment
-    Processor
-  }
   input Accounts_DeleteAccountInput {
     id: ID!
   }
