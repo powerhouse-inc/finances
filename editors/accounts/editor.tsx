@@ -1,4 +1,4 @@
-import type { EditorProps } from "document-model";
+import type { DocumentModelModule, EditorProps, PHDocument } from "document-model";
 import { useState, useEffect, useRef } from "react";
 import {
   type AccountsDocument,
@@ -10,14 +10,41 @@ import type { AccountEntry } from "../../document-models/accounts/gen/types.js";
 import { generateId } from "document-model";
 import { toast, ToastContainer } from "@powerhousedao/design-system";
 import TransactionsTable from "../account-transactions/TransactionsTable.js";
+import { useDriveContext } from "@powerhousedao/reactor-browser";
 
 export type IProps = EditorProps<AccountsDocument>;
 
 export default function Editor(props: IProps) {
-  const { document: doc, dispatch } = props;
+  const { document: doc, dispatch, context } = props;
   const {
     state: { global: state },
   } = doc;
+
+  const { addDocument, documentModels, useDriveDocumentStates, useDocumentEditorProps } = useDriveContext();
+
+  const driveId = context.selectedNode?.driveId as any;
+
+  const accTxsDocModule = documentModels.find(
+    (model) => model.documentModel.id === "powerhouse/account-transactions"
+  ) as DocumentModelModule<PHDocument>;
+
+  const [documentIds] = useDriveDocumentStates({
+    driveId,
+  })
+
+  console.log('documentIds', Object.keys(documentIds))
+  const getAccountTransactionsDispatch = (documentId: string) => {
+    const docId = Object.keys(documentIds).find((id) => id === documentId);
+    console.log('docId', docId)
+    if (!docId) return;
+    const { dispatch } = useDocumentEditorProps({
+        documentId: 'test',
+        documentType: "powerhouse/account-transactions",
+        driveId,
+        documentModelModule: accTxsDocModule,
+      });
+    return dispatch;
+  };
 
   const [newAccount, setNewAccount] = useState<{
     name: string;
@@ -130,62 +157,33 @@ export default function Editor(props: IProps) {
 
   const trackTransactions = async () => {
     console.log("Tracking transactions");
-    const accountAddresses = state.accounts.map((account: AccountEntry) => {
-      return {
-        address: account.account,
-        name: account.name,
-      };
+    
+    state.accounts.map(async (account: AccountEntry) => {
+      const accountTransactionsDocument = await addDocument(
+        driveId,
+        account.name || "",
+        "powerhouse/account-transactions"
+      );
+
+      console.log("accountTransactionsDocument", accountTransactionsDocument);
+      dispatch(
+        accountsActions.updateAccount({
+          id: account.id,
+          accountTransactionsId: accountTransactionsDocument.id,
+        })
+      );
+
+      // const accountTransactionsDispatch = getAccountTransactionsDispatch(accountTransactionsDocument.id);
+      // console.log('accountTransactionsDispatch', accountTransactionsDispatch)
+      // if (accountTransactionsDispatch) {
+      //   accountTransactionsDispatch(
+      //     accountTransactionsActions.updateAccount({
+      //       account: account.account || "",
+      //     })
+      //   );
+      // }
     });
-    console.log("accountAddresses", accountAddresses);
-    if (accountAddresses.length === 0) {
-      console.log("No accounts to track");
-      return;
-    }
-
-    // // Create account transactions document for each account and import transactions
-    // const accountTransactionsDocuments = await Promise.all(
-    //   accountAddresses.map(
-    //     async (account: { address: string; name: string }) => {
-    //       // Create account transactions document
-    //       const accountTransactionsDocument =
-    //         await createAccountTransactionsDocument(
-    //           accountTransactionsClient,
-    //           account.name,
-    //           doc.driveId
-    //         );
-
-    //       // Add transaction document id to account
-    //       await addTransactionDocumentIdToAccount(
-    //         account.address,
-    //         accountTransactionsDocument
-    //       );
-
-    //       // Set counterparty address
-    //       await updateAccountTransactions(
-    //         accountTransactionsClient,
-    //         accountTransactionsDocument,
-    //         {
-    //           account: account.address,
-    //         }
-    //       );
-
-    //       // Import transactions
-    //       const result = await importTransactions(
-    //         accountTransactionsClient,
-    //         accountTransactionsDocument,
-    //         { addresses: [account.address] },
-    //         doc.driveId
-    //       );
-
-    //       // Add transaction document id to account
-    //       return result;
-    //     }
-    //   )
-    // );
-    // console.log(
-    //   "created and imported transactions",
-    //   accountTransactionsDocuments
-    // );
+    
     toast("Transactions tracked", {
       type: "success",
     });
@@ -407,7 +405,7 @@ export default function Editor(props: IProps) {
         </div>
 
         {/* Table Body */}
-        {state.accounts.map((account: AccountEntry, index: number) => (
+        {state.accounts?.map((account: AccountEntry, index: number) => (
           <div
             key={account.id}
             onClick={() => handleRowClick(account.id)}

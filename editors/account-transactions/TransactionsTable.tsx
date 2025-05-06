@@ -42,7 +42,7 @@ export default function TransactionsTable({
           </tr>
         </thead>
         <tbody>
-          {transactions.map((tx: any, index: any) => (
+          {transactions?.map((tx: any, index: any) => (
             <tr key={index} style={{ borderBottom: "1px solid #eee" }}>
               <td style={{ padding: "12px 8px", color: "#0066cc" }}>
                 <a

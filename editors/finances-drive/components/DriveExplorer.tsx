@@ -17,7 +17,7 @@ import { EditorContainer } from "./EditorContainer.js";
 import type { EditorContext, DocumentModelModule } from "document-model";
 import { CreateDocumentModal } from "@powerhousedao/design-system";
 import { CreateDocument } from "./CreateDocument.js";
-import { type DriveEditorContext, useDriveContext } from "@powerhousedao/reactor-browser";
+import { useDriveContext } from "@powerhousedao/reactor-browser";
 
 interface DriveExplorerProps {
   driveId: string;
@@ -26,7 +26,7 @@ interface DriveExplorerProps {
   onDeleteNode: (nodeId: string) => void;
   renameNode: (nodeId: string, name: string) => void;
   onCopyNode: (nodeId: string, targetName: string, parentId?: string) => void;
-  context: DriveEditorContext;
+  context: EditorContext;
 }
 
 export function DriveExplorer({
@@ -55,14 +55,14 @@ export function DriveExplorer({
     async (file: File, parentNode: BaseUiNode | null) => {
       console.log("Add file:", file, parentNode);
     },
-    [],
+    []
   );
 
   const dummyMoveNode = useCallback(
     async (uiNode: BaseUiNode, targetNode: BaseUiNode) => {
       console.log("Move node:", uiNode, targetNode);
     },
-    [],
+    []
   );
 
   const handleNodeSelect = useCallback((node: BaseUiFolderNode) => {
@@ -88,13 +88,13 @@ export function DriveExplorer({
       const node = await addDocument(
         driveId,
         fileName,
-        documentModel.documentModel.id,
+        documentModel.documentModel.id
       );
 
       selectedDocumentModel.current = null;
       setActiveDocumentId(node.id);
     },
-    [addDocument, driveId],
+    [addDocument, driveId]
   );
 
   const onSelectDocumentModel = useCallback(
@@ -102,7 +102,7 @@ export function DriveExplorer({
       selectedDocumentModel.current = documentModel;
       setOpenModal(true);
     },
-    [],
+    []
   );
 
   const filteredDocumentModels = documentModels;
@@ -112,17 +112,17 @@ export function DriveExplorer({
 
   // Separate folders and files
   const folders = transformedNodes.filter(
-    (node): node is UiFolderNode => node.kind === "FOLDER",
+    (node): node is UiFolderNode => node.kind === "FOLDER"
   );
   const files = transformedNodes.filter(
-    (node): node is UiFileNode => node.kind === "FILE",
+    (node): node is UiFileNode => node.kind === "FILE"
   );
 
   // Get children of selected folder using the custom hook
   const selectedFolderChildren = useSelectedFolderChildren(
     selectedNodeId,
     folders,
-    files,
+    files
   );
 
   // Get the active document info from nodes
@@ -130,40 +130,25 @@ export function DriveExplorer({
     ? files.find((file) => file.id === activeDocumentId)
     : undefined;
 
-  const documentModelModule = activeDocument ? context.getDocumentModelModule(activeDocument.documentType) : null;
-  const editorModule = activeDocument ? context.getEditor(activeDocument.documentType) : null;
-
   return (
     <div className="flex h-full">
       {/* Sidebar */}
-      <div className="w-64 border-r border-gray-200 p-4 overflow-y-auto">
+      {/* <div className="w-64 border-r border-gray-200 p-4 overflow-y-auto">
         <h2 className="text-lg font-semibold mb-4">Folders</h2>
         <FolderTree
           folders={folders}
           selectedNodeId={selectedNodeId}
           onSelectNode={handleNodeSelect}
         />
-      </div>
+      </div> */}
 
       {/* Main Content */}
       <div className="flex-1 p-4 overflow-y-auto">
-        {activeDocument && documentModelModule && editorModule ? (
-          <EditorContainer
-            context={context}
-            documentId={activeDocumentId!}
-            documentType={activeDocument.documentType}
-            driveId={driveId}
-            onClose={handleEditorClose}
-            title={activeDocument.name}
-            documentModelModule={documentModelModule}
-            editorModule={editorModule}
-          />
-        ) : (
-          <>
-            <h2 className="text-lg font-semibold mb-4">Contents</h2>
+        <>
+          <h2 className="text-lg font-semibold mb-4">Contents</h2>
 
-            {/* Folders Section */}
-            <FolderItemsGrid
+          {/* Folders Section */}
+          {/* <FolderItemsGrid
               folders={selectedFolderChildren.folders}
               onSelectNode={handleNodeSelect}
               onRenameNode={renameNode}
@@ -183,25 +168,35 @@ export function DriveExplorer({
               isAllowedToCreateDocuments={true}
               onAddFolder={onAddFolder}
               parentFolderId={selectedNodeId}
-            />
+            /> */}
 
-            {/* Files Section */}
-            <FileItemsGrid
-              files={selectedFolderChildren.files}
-              onSelectNode={handleFileSelect}
-              onRenameNode={renameNode}
-              onDuplicateNode={dummyDuplicateNode}
-              onDeleteNode={onDeleteNode}
-              isAllowedToCreateDocuments={true}
-            />
+          {/* Files Section */}
+          <FileItemsGrid
+            files={selectedFolderChildren.files}
+            onSelectNode={handleFileSelect}
+            onRenameNode={renameNode}
+            onDuplicateNode={dummyDuplicateNode}
+            onDeleteNode={onDeleteNode}
+            isAllowedToCreateDocuments={true}
+          />
 
-            {/* Create Document Section */}
-            <CreateDocument
-              createDocument={onSelectDocumentModel}
-              documentModels={filteredDocumentModels}
+          {/* Create Document Section */}
+          <CreateDocument
+            createDocument={onSelectDocumentModel}
+            documentModels={filteredDocumentModels}
+          />
+          <br/>
+        </>
+        {activeDocument ? (
+            <EditorContainer
+              context={context}
+              documentId={activeDocumentId!}
+              documentType={activeDocument.documentType}
+              driveId={driveId}
+              onClose={handleEditorClose}
+              title={activeDocument.name}
             />
-          </>
-        )}
+        ) : null}
       </div>
 
       {/* Create Document Modal */}
