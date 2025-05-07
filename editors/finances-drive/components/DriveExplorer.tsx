@@ -185,17 +185,17 @@ export function DriveExplorer({
             createDocument={onSelectDocumentModel}
             documentModels={filteredDocumentModels}
           />
-          <br/>
+          <br />
         </>
         {activeDocument ? (
-            <EditorContainer
-              context={context}
-              documentId={activeDocumentId!}
-              documentType={activeDocument.documentType}
-              driveId={driveId}
-              onClose={handleEditorClose}
-              title={activeDocument.name}
-            />
+          <EditorContainer
+            context={context}
+            documentId={activeDocumentId!}
+            documentType={activeDocument.documentType}
+            driveId={driveId}
+            onClose={handleEditorClose}
+            title={activeDocument.name}
+          />
         ) : null}
       </div>
 

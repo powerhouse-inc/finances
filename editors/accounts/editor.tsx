@@ -27,18 +27,25 @@ export default function Editor(props: IProps) {
   const accTxsDocModule = documentModels.find(
     (model) => model.documentModel.id === "powerhouse/account-transactions"
   ) as DocumentModelModule<PHDocument>;
+  // console.log("accTxsDocModule", accTxsDocModule)
+  const {actions: accTxsActions, reducer: accTxsReducer} = accTxsDocModule;
+  // console.log("accTxsActions", accTxsActions)
+  // console.log("accTxsReducer", accTxsReducer)
 
-  const [documentIds] = useDriveDocumentStates({
-    driveId,
-  })
+ 
+  // console.log('documentIds', Object.keys(documentIds))
 
-  console.log('documentIds', Object.keys(documentIds))
   const getAccountTransactionsDispatch = (documentId: string) => {
+    const [documentIds, setDocumentIds] = useDriveDocumentStates({
+      driveId,
+      documentIds: [documentId]
+    })
+    console.log('getAccountTransactionsDispatch documentIds', documentIds)
     const docId = Object.keys(documentIds).find((id) => id === documentId);
     console.log('docId', docId)
     if (!docId) return;
     const { dispatch } = useDocumentEditorProps({
-        documentId: 'test',
+        documentId: docId,
         documentType: "powerhouse/account-transactions",
         driveId,
         documentModelModule: accTxsDocModule,
@@ -133,7 +140,7 @@ export default function Editor(props: IProps) {
     dispatch(
       accountsActions.updateAccount({
         id: accountId,
-        [field]: value,
+        [field]: field === 'owners' ? value.split(',').map((s) => s.trim()) : value,
       })
     );
 
@@ -158,7 +165,7 @@ export default function Editor(props: IProps) {
   const trackTransactions = async () => {
     console.log("Tracking transactions");
     
-    state.accounts.map(async (account: AccountEntry) => {
+    for (const account of state.accounts) {
       const accountTransactionsDocument = await addDocument(
         driveId,
         account.name || "",
@@ -166,6 +173,8 @@ export default function Editor(props: IProps) {
       );
 
       console.log("accountTransactionsDocument", accountTransactionsDocument);
+
+      // Update the account with the new transaction document ID
       dispatch(
         accountsActions.updateAccount({
           id: account.id,
@@ -173,16 +182,18 @@ export default function Editor(props: IProps) {
         })
       );
 
-      // const accountTransactionsDispatch = getAccountTransactionsDispatch(accountTransactionsDocument.id);
-      // console.log('accountTransactionsDispatch', accountTransactionsDispatch)
-      // if (accountTransactionsDispatch) {
-      //   accountTransactionsDispatch(
-      //     accountTransactionsActions.updateAccount({
-      //       account: account.account || "",
-      //     })
-      //   );
-      // }
-    });
+      // Get the dispatch function for the account transactions document
+      const accountTransactionsDispatch = getAccountTransactionsDispatch(accountTransactionsDocument.id);
+      
+      if (accountTransactionsDispatch) {
+        // Dispatch the update account action to the account transactions document
+        accountTransactionsDispatch(
+          accTxsActions.updateAccount({
+            account: account.account || "",
+          })
+        );
+      }
+    }
     
     toast("Transactions tracked", {
       type: "success",
@@ -226,8 +237,8 @@ export default function Editor(props: IProps) {
       // const transactionDocument = await getTransactionDocument(
       //   account.accountTransactionsId
       // );
-      setTransactionDocument(transactionDocument);
-      setOnShowTransactionsTable(true);
+      // setTransactionDocument(transactionDocument);
+      // setOnShowTransactionsTable(true);
     } catch (error) {
       console.error("Error fetching transaction document:", error);
       setOnShowTransactionsTable(false);
