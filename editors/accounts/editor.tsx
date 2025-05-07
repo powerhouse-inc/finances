@@ -18,8 +18,8 @@ import {
   createTxsDocument,
   importTransactions,
   updateTxsAccount,
-  updateTxsDocument,
 } from "../utils/graphqlOperations.js";
+import { getTransactionDocument } from "../utils/financesDriveOperations.js";
 
 export type IProps = EditorProps<AccountsDocument>;
 
@@ -144,6 +144,10 @@ export default function Editor(props: IProps) {
   const trackTransactions = async () => {
     console.log("Tracking transactions");
 
+    if (!driveId) {
+      return;
+    }
+
     for (const account of state.accounts) {
 
       if (account.accountTransactionsId) {
@@ -218,11 +222,11 @@ export default function Editor(props: IProps) {
     }
 
     try {
-      // const transactionDocument = await getTransactionDocument(
-      //   account.accountTransactionsId
-      // );
-      // setTransactionDocument(transactionDocument);
-      // setOnShowTransactionsTable(true);
+      const transactionDocument = await getTransactionDocument(
+        account.accountTransactionsId
+      );
+      setTransactionDocument(transactionDocument);
+      setOnShowTransactionsTable(true);
     } catch (error) {
       console.error("Error fetching transaction document:", error);
       setOnShowTransactionsTable(false);
