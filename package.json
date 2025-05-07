@@ -52,6 +52,8 @@
     "service-unstartup": "bash ./node_modules/@powerhousedao/ph-cli/dist/scripts/service-unstartup.sh"
   },
   "dependencies": {
+    "@apollo/client": "^3.13.8",
+    "@commander-js/extra-typings": "^13.1.0",
     "@powerhousedao/builder-tools": "0.9.34-staging.0",
     "@powerhousedao/common": "1.10.39-staging.0",
     "@powerhousedao/design-system": "1.39.22-staging.0",

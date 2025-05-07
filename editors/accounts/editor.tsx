@@ -1,4 +1,8 @@
-import type { DocumentModelModule, EditorProps, PHDocument } from "document-model";
+import type {
+  DocumentModelModule,
+  EditorProps,
+  PHDocument,
+} from "document-model";
 import { useState, useEffect, useRef } from "react";
 import {
   type AccountsDocument,
@@ -10,7 +14,12 @@ import type { AccountEntry } from "../../document-models/accounts/gen/types.js";
 import { generateId } from "document-model";
 import { toast, ToastContainer } from "@powerhousedao/design-system";
 import TransactionsTable from "../account-transactions/TransactionsTable.js";
-import { useDriveContext } from "@powerhousedao/reactor-browser";
+import {
+  createTxsDocument,
+  importTransactions,
+  updateTxsAccount,
+  updateTxsDocument,
+} from "../utils/graphqlOperations.js";
 
 export type IProps = EditorProps<AccountsDocument>;
 
@@ -20,38 +29,7 @@ export default function Editor(props: IProps) {
     state: { global: state },
   } = doc;
 
-  const { addDocument, documentModels, useDriveDocumentStates, useDocumentEditorProps } = useDriveContext();
-
   const driveId = context.selectedNode?.driveId as any;
-
-  const accTxsDocModule = documentModels.find(
-    (model) => model.documentModel.id === "powerhouse/account-transactions"
-  ) as DocumentModelModule<PHDocument>;
-  // console.log("accTxsDocModule", accTxsDocModule)
-  const {actions: accTxsActions, reducer: accTxsReducer} = accTxsDocModule;
-  // console.log("accTxsActions", accTxsActions)
-  // console.log("accTxsReducer", accTxsReducer)
-
- 
-  // console.log('documentIds', Object.keys(documentIds))
-
-  const getAccountTransactionsDispatch = (documentId: string) => {
-    const [documentIds, setDocumentIds] = useDriveDocumentStates({
-      driveId,
-      documentIds: [documentId]
-    })
-    console.log('getAccountTransactionsDispatch documentIds', documentIds)
-    const docId = Object.keys(documentIds).find((id) => id === documentId);
-    console.log('docId', docId)
-    if (!docId) return;
-    const { dispatch } = useDocumentEditorProps({
-        documentId: docId,
-        documentType: "powerhouse/account-transactions",
-        driveId,
-        documentModelModule: accTxsDocModule,
-      });
-    return dispatch;
-  };
 
   const [newAccount, setNewAccount] = useState<{
     name: string;
@@ -140,7 +118,8 @@ export default function Editor(props: IProps) {
     dispatch(
       accountsActions.updateAccount({
         id: accountId,
-        [field]: field === 'owners' ? value.split(',').map((s) => s.trim()) : value,
+        [field]:
+          field === "owners" ? value.split(",").map((s) => s.trim()) : value,
       })
     );
 
@@ -164,37 +143,42 @@ export default function Editor(props: IProps) {
 
   const trackTransactions = async () => {
     console.log("Tracking transactions");
-    
+
     for (const account of state.accounts) {
-      const accountTransactionsDocument = await addDocument(
-        driveId,
-        account.name || "",
-        "powerhouse/account-transactions"
-      );
 
-      console.log("accountTransactionsDocument", accountTransactionsDocument);
+      if (account.accountTransactionsId) {
+        console.log(`Account ${account.name} already has a transactions document`);
+        continue;
+      }
 
-      // Update the account with the new transaction document ID
+      const txsDocumentId = await createTxsDocument(account.name || "", driveId);
+
       dispatch(
         accountsActions.updateAccount({
           id: account.id,
-          accountTransactionsId: accountTransactionsDocument.id,
+          accountTransactionsId: txsDocumentId,
         })
       );
+      console.log("txsDocumentId", txsDocumentId);
 
-      // Get the dispatch function for the account transactions document
-      const accountTransactionsDispatch = getAccountTransactionsDispatch(accountTransactionsDocument.id);
-      
-      if (accountTransactionsDispatch) {
-        // Dispatch the update account action to the account transactions document
-        accountTransactionsDispatch(
-          accTxsActions.updateAccount({
-            account: account.account || "",
-          })
-        );
-      }
+      await updateTxsAccount(
+        txsDocumentId,
+        {
+          account: account.account,
+        },
+        driveId
+      );
+
+      await importTransactions(
+        txsDocumentId,
+        {
+          addresses: [account.account || ""],
+        },
+        driveId
+      );
     }
-    
+
+
     toast("Transactions tracked", {
       type: "success",
     });

@@ -87,6 +87,11 @@ export const schema: DocumentNode = gql`
       docId: PHID
       input: AccountTransactions_UpdateAccountInput
     ): Int
+    AccountTransactions_importTransactions(
+      driveId: String
+      docId: PHID
+      input: AccountTransactions_ImportTransactionsInput
+    ): Int
   }
 
   """
@@ -126,5 +131,8 @@ export const schema: DocumentNode = gql`
   }
   input AccountTransactions_UpdateAccountInput {
     account: String
+  }
+  input AccountTransactions_ImportTransactionsInput {
+    addresses: [EthereumAddress]
   }
 `;
