@@ -1,7 +1,7 @@
 {
-  "name": "updatefinances",
-  "description": "",
-  "version": "1.0.0",
+  "name": "@liberuum-org/finances",
+  "description": "Powerhouse finances drive explorer",
+  "version": "0.0.1",
   "license": "AGPL-3.0-only",
   "type": "module",
   "files": [
