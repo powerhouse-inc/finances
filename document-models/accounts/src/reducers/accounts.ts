@@ -1,16 +1,22 @@
-import type { AccountsAccountsOperations } from "document-models/accounts/gen/accounts/operations.js";
+/**
+ * This is a scaffold file meant for customization:
+ * - modify it by implementing the reducer functions
+ * - delete the file and run the code generator again to have it reset
+ */
+
+import type { AccountsAccountsOperations } from "../../gen/accounts/operations.js";
 
 export const reducer: AccountsAccountsOperations = {
   createAccountOperation(state, action, dispatch) {
     state.accounts.push({
       id: action.input.id,
-      name: action.input.name,
-      accountTransactionsId: action.input.accountTransactionsId,
-      chain: action.input.chain,
-      account: action.input.account,
-      budgetPath: action.input.budgetPath,
-      type: action.input.type,
-      owners: action.input.owners,
+      name: action.input.name || "",
+      accountTransactionsId: action.input.accountTransactionsId || "",
+      chain: action.input.chain || "",
+      account: action.input.account || "",
+      budgetPath: action.input.budgetPath || "",
+      type: action.input.type || "Protocol",
+      owners: (action.input.owners || []).filter((owner): owner is string => owner !== undefined),
     });
   },
 
@@ -41,8 +47,8 @@ export const reducer: AccountsAccountsOperations = {
     if (action.input.type !== undefined) {
       account.type = action.input.type;
     }
-    if (action.input.owners !== undefined) {
-      account.owners = action.input.owners;
+    if (action.input.owners !== undefined && action.input.owners !== null) {
+      account.owners = action.input.owners.filter((owner): owner is string => owner !== undefined);
     }
   },
 

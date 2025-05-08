@@ -1,18 +1,22 @@
-import { type EditorProps, hashKey } from "document-model";
+import { useState } from "react";
+import type { EditorProps } from "document-model";
 import {
   type AccountTransactionsDocument,
   actions,
 } from "../../document-models/account-transactions/index.js";
-import { useState, useEffect } from "react";
-import { Button } from "@powerhousedao/design-system";
-
+import TransactionsTable from "./TransactionsTable.js";
+import { Button, toast, ToastContainer } from "@powerhousedao/design-system";
+import { generateId } from "document-model";
+import { importTransactions } from "../utils/graphqlOperations.js";
 export type IProps = EditorProps<AccountTransactionsDocument>;
 
 export default function Editor(props: IProps) {
-  const { document, dispatch } = props;
-  const { state } = document;
-  const transactions = state.global?.transactions || [];
-  const account = state.global?.account;
+  const { document, dispatch, context } = props;
+  const {
+    state: {
+      global: { transactions, account },
+    },
+  } = document;
 
   const [hasEditedAccount, setHasEditedAccount] = useState(false);
   const [newUsername, setNewUsername] = useState(account?.username || "");
@@ -29,38 +33,35 @@ export default function Editor(props: IProps) {
     },
   });
 
+
   const [showTransactionForm, setShowTransactionForm] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    try {
-      dispatch(
-        actions.createTransaction({
-          counterParty: newTransaction.counterParty,
-          amount: parseFloat(newTransaction.amount),
-          datetime: new Date().toISOString(),
-          details: {
-            txHash: newTransaction.details.txHash,
-            token: newTransaction.details.token,
-            blockNumber: parseInt(newTransaction.details.blockNumber) || null,
-          },
-        })
-      );
-
-      setNewTransaction({
-        counterParty: "",
-        amount: "",
+    dispatch(
+      actions.createTransaction({
+        id: generateId(),
+        counterParty: newTransaction.counterParty,
+        amount: parseFloat(newTransaction.amount),
+        datetime: new Date().toISOString(),
         details: {
-          txHash: "",
-          token: "",
-          blockNumber: "",
+          txHash: newTransaction.details.txHash,
+          token: newTransaction.details.token,
+          blockNumber: parseInt(newTransaction.details.blockNumber) || null,
         },
-      });
-      setShowTransactionForm(false);
-    } catch (error) {
-      console.error("Error creating transaction:", error);
-    }
+      })
+    );
+    setNewTransaction({
+      counterParty: "",
+      amount: "",
+      details: {
+        txHash: "",
+        token: "",
+        blockNumber: "",
+      },
+    });
+    setShowTransactionForm(false);
   };
 
   const handleUpdateAccount = async (e: React.FormEvent) => {
@@ -79,16 +80,49 @@ export default function Editor(props: IProps) {
     }
   };
 
-  const handleImportSubmit = (e: React.FormEvent) => {
+  const handleImportSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Store the address for later use
+
     console.log("Stored Ethereum address:", ethereumAddress);
+
+    dispatch(
+      actions.updateAccount({
+        account: ethereumAddress,
+      })
+    );
+
+    const importedTransactions = await importTransactions(
+      document.documentId,
+      { addresses: [ethereumAddress] },
+      "finances"
+    );
+    console.log("importedTransactions", importedTransactions);
+
     setShowImportModal(false);
     setEthereumAddress("");
+    toast("Transactions imported", {
+      type: "success",
+    });
+  };
+
+  const handleDeleteTransaction = (id: string) => {
+    dispatch(actions.deleteTransaction({ id }));
   };
 
   return (
     <div style={{ padding: "20px" }}>
+      <ToastContainer
+        position="bottom-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick={false}
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
       {/* Account Info */}
       <div style={{ marginBottom: "24px" }}>
         <div
@@ -472,76 +506,11 @@ export default function Editor(props: IProps) {
         </div>
       )}
 
-      <table style={{ width: "100%", borderCollapse: "collapse" }}>
-        <thead>
-          <tr style={{ borderBottom: "1px solid #eee" }}>
-            <th style={{ textAlign: "left", padding: "12px 8px" }}>Txn Hash</th>
-            <th style={{ textAlign: "left", padding: "12px 8px" }}>Block</th>
-            <th style={{ textAlign: "left", padding: "12px 8px" }}>Date</th>
-            <th style={{ textAlign: "left", padding: "12px 8px" }}>
-              Counterparty Address
-            </th>
-            <th style={{ textAlign: "left", padding: "12px 8px" }}>Type</th>
-            <th style={{ textAlign: "left", padding: "12px 8px" }}>Amount</th>
-            <th style={{ textAlign: "left", padding: "12px 8px" }}>Token</th>
-            <th style={{ textAlign: "left", padding: "12px 8px" }}>
-              Budget Path
-            </th>
-            <th style={{ textAlign: "left", padding: "12px 8px" }}></th>
-          </tr>
-        </thead>
-        <tbody>
-          {transactions.map((tx, index) => (
-            <tr key={index} style={{ borderBottom: "1px solid #eee" }}>
-              <td style={{ padding: "12px 8px", color: "#0066cc" }}>
-                {tx.details.txHash.substring(0, 10)}...
-              </td>
-              <td style={{ padding: "12px 8px" }}>{tx.details.blockNumber}</td>
-              <td style={{ padding: "12px 8px" }}>
-                {new Date(tx.datetime).toLocaleDateString()}
-              </td>
-              <td style={{ padding: "12px 8px" }}>
-                {tx.counterParty?.substring(0, 10)}...
-              </td>
-              <td style={{ padding: "12px 8px" }}>
-                <span
-                  style={{
-                    color:
-                      parseFloat(tx.amount.toString()) > 0
-                        ? "#22c55e"
-                        : "#ef4444",
-                    fontWeight: "500",
-                  }}
-                >
-                  {parseFloat(tx.amount.toString()) > 0 ? "In" : "Out"}
-                </span>
-              </td>
-              <td style={{ padding: "12px 8px" }}>
-                {Math.abs(parseFloat(tx.amount.toString()))}
-              </td>
-              <td style={{ padding: "12px 8px" }}>{tx.details.token}</td>
-              <td style={{ padding: "12px 8px" }}>
-                {tx.budget || "SKY/Ecosystem-Actor/Powerhouse"}
-              </td>
-              <td style={{ padding: "12px 8px" }}>
-                <button
-                  onClick={() => {
-                    /* TODO: Delete transaction */
-                  }}
-                  style={{
-                    background: "none",
-                    border: "none",
-                    color: "#ff4444",
-                    cursor: "pointer",
-                  }}
-                >
-                  🗑️
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <TransactionsTable
+        transactions={transactions}
+        account={account || {}}
+        handleDeleteTransaction={handleDeleteTransaction}
+      />
 
       {/* TODO: Add modal for new transaction form */}
     </div>

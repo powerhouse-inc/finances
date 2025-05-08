@@ -77,7 +77,6 @@ export const schema: DocumentNode = gql`
     owners: [PHID]
   }
 
-
   input Accounts_UpdateAccountInput {
     id: OID!
     name: OLabel

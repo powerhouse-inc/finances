@@ -1,35 +1,20 @@
 {
-  "name": "powerhouse/finances",
-  "description": "Financial management and tracking tools",
-  "category": "Finance",
-  "publisher": {
-    "name": "Powerhouse",
-    "url": "https://www.powerhouse.inc/"
-  },
-  "documentModels": [
-    {
-      "id": "powerhouse/document-drive",
-      "name": "Document Drive"
+    "name": "Finances",
+    "description": "Financial management and tracking tools",
+    "category": "Finance",
+    "publisher": {
+        "name": "Powerhouse",
+        "url": "https://powerhousedao.com"
     },
-    {
-      "id": "powerhouse/finances",
-      "name": "Finances Document"
-    }
-  ],
-  "editors": [
-    {
-      "id": "FinancesDriveExplorer",
-      "name": "Finances Drive Explorer",
-      "documentTypes": ["powerhouse/document-drive"]
-    }
-  ],
-  "subgraphs": [],
-  "importScripts": [],
-  "apps": [
-    {
-      "id": "powerhouse/finances-drive-explorer",
-      "name": "Finances App",
-      "driveEditor": "FinancesDriveExplorer"
-    }
-  ]
+    "documentModels": [],
+    "editors": [],
+    "apps": [
+        {
+            "id": "finances-drive",
+            "name": "Finances Drive",
+            "driveEditor": "finances-drive"
+        }
+    ],
+    "subgraphs": [],
+    "importScripts": []
 }

@@ -62,7 +62,6 @@ input UpdateAccountInput {
     owners: [PHID]
 }
 
-
 input DeleteAccountInput {
   id: ID!
 }

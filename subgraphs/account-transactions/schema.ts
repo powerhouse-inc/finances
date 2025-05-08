@@ -87,12 +87,18 @@ export const schema: DocumentNode = gql`
       docId: PHID
       input: AccountTransactions_UpdateAccountInput
     ): Int
+    AccountTransactions_importTransactions(
+      driveId: String
+      docId: PHID
+      input: AccountTransactions_ImportTransactionsInput
+    ): Int
   }
 
   """
   Module: AccountTransactions
   """
   input AccountTransactions_CreateTransactionInput {
+    id: ID!
     counterParty: EthereumAddress
     amount: Amount_Money!
     datetime: DateTime!
@@ -107,6 +113,7 @@ export const schema: DocumentNode = gql`
   }
 
   input AccountTransactions_UpdateTransactionInput {
+    id: ID!
     counterParty: EthereumAddress
     amount: Amount_Money
     datetime: DateTime
@@ -120,8 +127,12 @@ export const schema: DocumentNode = gql`
   input AccountTransactions_UpdateTransactionBudgetInput {
     txId: ID!
     budgetId: OID!
+    name: OLabel
   }
   input AccountTransactions_UpdateAccountInput {
     account: String
+  }
+  input AccountTransactions_ImportTransactionsInput {
+    addresses: [EthereumAddress]
   }
 `;

@@ -1,21 +1,35 @@
-import { type EditorProps, hashKey } from "document-model";
+import type {
+  DocumentModelModule,
+  EditorProps,
+  PHDocument,
+} from "document-model";
+import { useState, useEffect, useRef } from "react";
 import {
   type AccountsDocument,
   type AccountType,
-  actions,
+  actions as accountsActions,
 } from "../../document-models/accounts/index.js";
-import { type AccountEntry as BaseAccountEntry } from "../../document-models/accounts/gen/types.js";
-import { useState } from "react";
-
-type AccountEntry = BaseAccountEntry;
+import { actions as accountTransactionsActions } from "../../document-models/account-transactions/index.js";
+import type { AccountEntry } from "../../document-models/accounts/gen/types.js";
+import { generateId } from "document-model";
+import { toast, ToastContainer } from "@powerhousedao/design-system";
+import TransactionsTable from "../account-transactions/TransactionsTable.js";
+import {
+  createTxsDocument,
+  importTransactions,
+  updateTxsAccount,
+} from "../utils/graphqlOperations.js";
+import { getTransactionDocument } from "../utils/financesDriveOperations.js";
 
 export type IProps = EditorProps<AccountsDocument>;
 
 export default function Editor(props: IProps) {
-  const { document, dispatch } = props;
+  const { document: doc, dispatch, context } = props;
   const {
     state: { global: state },
-  } = document;
+  } = doc;
+
+  const driveId = context.selectedNode?.driveId as any;
 
   const [newAccount, setNewAccount] = useState<{
     name: string;
@@ -42,15 +56,42 @@ export default function Editor(props: IProps) {
     value: string;
   } | null>(null);
 
-  const handleCreateAccount = () => {
+  const tableRef = useRef<HTMLDivElement>(null);
+  const transactionsTableRef = useRef<HTMLDivElement>(null);
+  const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
+  const [onShowTransactionsTable, setOnShowTransactionsTable] = useState(false);
+  const [transactionDocument, setTransactionDocument] = useState<any>(null);
+  const [accountName, setAccountName] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        tableRef.current &&
+        !tableRef.current.contains(event.target as Node) &&
+        transactionsTableRef.current &&
+        !transactionsTableRef.current.contains(event.target as Node)
+      ) {
+        setSelectedRowId(null);
+        setOnShowTransactionsTable(false);
+      }
+    };
+
+    window.document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      window.document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  const handleCreateAccount = async () => {
     console.log("Creating account:", newAccount);
 
     dispatch(
-      actions.createAccount({
-        id: hashKey(),
+      accountsActions.createAccount({
+        id: generateId(),
         ...newAccount,
       })
     );
+
     setNewAccount({
       name: "",
       account: "",
@@ -62,20 +103,26 @@ export default function Editor(props: IProps) {
     });
   };
 
-  const handleCellEdit = (account: AccountEntry, field: keyof AccountEntry, value: string) => {
+  const handleCellEdit = (
+    account: AccountEntry,
+    field: keyof AccountEntry,
+    value: string
+  ) => {
     setEditingCell({ accountId: account.id, field, value });
   };
 
-  const handleCellSave = () => {
+  const handleCellSave = async () => {
     if (!editingCell) return;
 
     const { accountId, field, value } = editingCell;
     dispatch(
-      actions.updateAccount({
+      accountsActions.updateAccount({
         id: accountId,
-        [field]: value,
+        [field]:
+          field === "owners" ? value.split(",").map((s) => s.trim()) : value,
       })
     );
+
     setEditingCell(null);
   };
 
@@ -85,7 +132,7 @@ export default function Editor(props: IProps) {
 
   const handleCellBlur = (originalValue: string | null | undefined) => {
     if (!editingCell) return;
-    
+
     // Only update if the value has changed
     if (editingCell.value !== (originalValue || "")) {
       handleCellSave();
@@ -94,19 +141,114 @@ export default function Editor(props: IProps) {
     }
   };
 
-  const trackTransactions = () => {
+  const trackTransactions = async () => {
     console.log("Tracking transactions");
+
+    if (!driveId) {
+      return;
+    }
+
+    for (const account of state.accounts) {
+
+      if (account.accountTransactionsId) {
+        console.log(`Account ${account.name} already has a transactions document`);
+        continue;
+      }
+
+      const txsDocumentId = await createTxsDocument(account.name || "", driveId);
+
+      dispatch(
+        accountsActions.updateAccount({
+          id: account.id,
+          accountTransactionsId: txsDocumentId,
+        })
+      );
+      console.log("txsDocumentId", txsDocumentId);
+
+      await updateTxsAccount(
+        txsDocumentId,
+        {
+          account: account.account,
+        },
+        driveId
+      );
+
+      await importTransactions(
+        txsDocumentId,
+        {
+          addresses: [account.account || ""],
+        },
+        driveId
+      );
+    }
+
+
+    toast("Transactions tracked", {
+      type: "success",
+    });
   };
 
-  const renderEditableCell = (account: AccountEntry, field: keyof AccountEntry, value: string | null | undefined) => {
-    const isEditing = editingCell?.accountId === account.id && editingCell?.field === field;
+  const addTransactionDocumentIdToAccount = async (
+    address: string,
+    transactionDocumentId: string
+  ) => {
+    const account = state.accounts.find(
+      (account: AccountEntry) => account.account === address
+    );
+    if (!account) {
+      console.log("Account not found");
+      return;
+    }
+    // await updateAccount(
+    //   client,
+    //   doc.documentId,
+    //   {
+    //     id: account.id,
+    //     accountTransactionsId: transactionDocumentId,
+    //   },
+    //   doc.driveId
+    // );
+  };
+
+  const handleRowClick = async (accountId: string) => {
+    setSelectedRowId(accountId);
+    const account = state.accounts.find(
+      (account: AccountEntry) => account.id === accountId
+    );
+    setAccountName(account?.name || null);
+    if (!account?.accountTransactionsId) {
+      setOnShowTransactionsTable(false);
+      return;
+    }
+
+    try {
+      const transactionDocument = await getTransactionDocument(
+        account.accountTransactionsId
+      );
+      setTransactionDocument(transactionDocument);
+      setOnShowTransactionsTable(true);
+    } catch (error) {
+      console.error("Error fetching transaction document:", error);
+      setOnShowTransactionsTable(false);
+    }
+  };
+
+  const renderEditableCell = (
+    account: AccountEntry,
+    field: keyof AccountEntry,
+    value: string | null | undefined
+  ) => {
+    const isEditing =
+      editingCell?.accountId === account.id && editingCell?.field === field;
 
     if (isEditing) {
       return (
         <input
           type="text"
           value={editingCell.value}
-          onChange={(e) => setEditingCell({ ...editingCell, value: e.target.value })}
+          onChange={(e) =>
+            setEditingCell({ ...editingCell, value: e.target.value })
+          }
           onKeyDown={(e) => {
             if (e.key === "Enter") handleCellBlur(value);
             if (e.key === "Escape") handleCellCancel();
@@ -148,8 +290,39 @@ export default function Editor(props: IProps) {
     );
   };
 
+  const handleDeleteAccount = async (accountId: string) => {
+    dispatch(accountsActions.deleteAccount({ id: accountId }));
+  };
+
+  const handleDeleteTransaction = async (transactionId: string) => {
+    dispatch(
+      accountTransactionsActions.deleteTransaction({
+        id: transactionId,
+      }) as any
+    );
+  };
+
   return (
-    <div style={{ padding: "20px" }}>
+    <div
+      style={{
+        padding: "20px",
+        minHeight: "100%",
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
+      <ToastContainer
+        position="bottom-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick={false}
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
       <div
         style={{
           display: "flex",
@@ -197,6 +370,7 @@ export default function Editor(props: IProps) {
 
       {/* Table Container */}
       <div
+        ref={tableRef}
         style={{
           width: "100%",
           overflowX: "auto",
@@ -209,7 +383,7 @@ export default function Editor(props: IProps) {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "1fr 1.5fr 1fr 1fr 1fr 1fr 1fr 80px",
+            gridTemplateColumns: "60px 1fr 1.5fr 1fr 1fr 1fr 1fr 1fr 80px",
             minWidth: "1200px",
             gap: "8px",
             padding: "8px 4px",
@@ -218,6 +392,7 @@ export default function Editor(props: IProps) {
             backgroundColor: "#f8f9fa",
           }}
         >
+          <div style={{ textAlign: "center" }}>ID</div>
           <div style={{ textAlign: "center" }}>Name</div>
           <div style={{ textAlign: "center" }}>Address</div>
           <div style={{ textAlign: "center" }}>Type</div>
@@ -229,30 +404,41 @@ export default function Editor(props: IProps) {
         </div>
 
         {/* Table Body */}
-        {state.accounts.map((account: AccountEntry) => (
+        {state.accounts?.map((account: AccountEntry, index: number) => (
           <div
             key={account.id}
+            onClick={() => handleRowClick(account.id)}
             style={{
               display: "grid",
-              gridTemplateColumns: "1fr 1.5fr 1fr 1fr 1fr 1fr 1fr 80px",
+              gridTemplateColumns: "60px 1fr 1.5fr 1fr 1fr 1fr 1fr 1fr 80px",
               minWidth: "1200px",
               gap: "8px",
               padding: "8px 4px",
               borderBottom: "1px solid #eee",
               alignItems: "center",
+              cursor: "pointer",
+              backgroundColor:
+                selectedRowId === account.id ? "#e3f2fd" : "transparent",
+              transition: "background-color 0.2s ease",
             }}
           >
+            <div style={{ textAlign: "center" }}>{index + 1}</div>
             {renderEditableCell(account, "name", account.name)}
             {renderEditableCell(account, "account", account.account)}
             {renderEditableCell(account, "type", account.type)}
             {renderEditableCell(account, "chain", account.chain)}
             {renderEditableCell(account, "budgetPath", account.budgetPath)}
-            {renderEditableCell(account, "accountTransactionsId", account.accountTransactionsId)}
+            {renderEditableCell(
+              account,
+              "accountTransactionsId",
+              account.accountTransactionsId
+            )}
             {renderEditableCell(account, "owners", account.owners?.join(", "))}
             <button
-              onClick={() =>
-                dispatch(actions.deleteAccount({ id: account.id }))
-              }
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDeleteAccount(account.id);
+              }}
               style={{
                 padding: "4px 8px",
                 backgroundColor: "#dc3545",
@@ -463,6 +649,28 @@ export default function Editor(props: IProps) {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+      {onShowTransactionsTable && (
+        <div
+          ref={transactionsTableRef}
+          style={{
+            marginTop: "20px",
+            backgroundColor: "white",
+            padding: "16px",
+            flex: 1,
+          }}
+        >
+          <div>
+            <h2>{accountName} Account Transactions</h2>
+          </div>
+          <div>
+            <TransactionsTable
+              account={transactionDocument.state.account}
+              transactions={transactionDocument.state.transactions}
+              handleDeleteTransaction={handleDeleteTransaction}
+            />
           </div>
         </div>
       )}

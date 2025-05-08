@@ -59,6 +59,7 @@ enum AgentType {
 # account_transactions
 
 input CreateTransactionInput {
+  id: ID!,
   counterParty: EthereumAddress
   amount: Amount_Money!
   datetime: DateTime!
@@ -72,8 +73,8 @@ input TransactionDetailsInput {
   blockNumber: Int
 }
 
-
 input UpdateTransactionInput {
+  id: ID!,
   counterParty: EthereumAddress
   amount: Amount_Money
   datetime: DateTime
@@ -87,7 +88,8 @@ input DeleteTransactionInput {
 
 input UpdateTransactionBudgetInput {
   txId: ID!,
-  budgetId: OID!
+  budgetId: OID!,
+  name: OLabel
 }
 
 input UpdateAccountInput {

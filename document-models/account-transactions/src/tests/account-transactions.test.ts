@@ -11,6 +11,7 @@ import {
   type UpdateTransactionInput,
   type DeleteTransactionInput,
   type UpdateTransactionBudgetInput,
+  type UpdateAccountInput,
 } from "../../gen/schema/index.js";
 import { reducer } from "../../gen/reducer.js";
 import * as creators from "../../gen/account-transactions/creators.js";
@@ -100,6 +101,21 @@ describe("AccountTransactions Operations", () => {
     expect(updatedDocument.operations.global[0].type).toBe(
       "UPDATE_TRANSACTION_BUDGET",
     );
+    expect(updatedDocument.operations.global[0].input).toStrictEqual(input);
+    expect(updatedDocument.operations.global[0].index).toEqual(0);
+  });
+  it("should handle updateAccount operation", () => {
+    // generate a random id
+    // const id = documentModelUtils.hashKey();
+
+    const input: UpdateAccountInput = generateMock(
+      z.UpdateAccountInputSchema(),
+    );
+
+    const updatedDocument = reducer(document, creators.updateAccount(input));
+
+    expect(updatedDocument.operations.global).toHaveLength(1);
+    expect(updatedDocument.operations.global[0].type).toBe("UPDATE_ACCOUNT");
     expect(updatedDocument.operations.global[0].input).toStrictEqual(input);
     expect(updatedDocument.operations.global[0].index).toEqual(0);
   });
