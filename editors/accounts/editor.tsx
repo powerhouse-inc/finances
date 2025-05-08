@@ -29,7 +29,7 @@ export default function Editor(props: IProps) {
     state: { global: state },
   } = doc;
 
-  const driveId = context.selectedNode?.driveId as any;
+  const driveId = (context as any).selectedNode?.driveId;
 
   const [newAccount, setNewAccount] = useState<{
     name: string;

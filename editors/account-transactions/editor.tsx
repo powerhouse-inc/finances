@@ -91,12 +91,12 @@ export default function Editor(props: IProps) {
       })
     );
 
-    const importedTransactions = await importTransactions(
-      document.documentId,
-      { addresses: [ethereumAddress] },
-      "finances"
-    );
-    console.log("importedTransactions", importedTransactions);
+    // const importedTransactions = await importTransactions(
+    //   document.documentId,
+    //   { addresses: [ethereumAddress] },
+    //   "finances"
+    // );
+    // console.log("importedTransactions", importedTransactions);
 
     setShowImportModal(false);
     setEthereumAddress("");
