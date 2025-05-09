@@ -1,7 +1,8 @@
 import { z } from "zod";
 import type {
   AccountEntry,
-  AccountType,
+  AccountTypeInputEnum,
+  Account_AccountType,
   AccountsState,
   CreateAccountInput,
   DeleteAccountInput,
@@ -21,7 +22,15 @@ export const definedNonNullAnySchema = z
   .any()
   .refine((v) => isDefinedNonNullAny(v));
 
-export const AccountTypeSchema = z.enum([
+export const AccountTypeInputEnumSchema = z.enum([
+  "Auditor",
+  "Operational",
+  "Payment",
+  "Processor",
+  "Protocol",
+]);
+
+export const Account_AccountTypeSchema = z.enum([
   "Auditor",
   "Operational",
   "Payment",
@@ -44,7 +53,7 @@ export function AccountEntrySchema(): z.ZodObject<Properties<AccountEntry>> {
     id: z.string(),
     name: z.string().nullable(),
     owners: z.array(z.string().nullable()).nullable(),
-    type: AccountTypeSchema.nullable(),
+    type: Account_AccountTypeSchema.nullable(),
   });
 }
 
@@ -71,7 +80,7 @@ export function CreateAccountInputSchema(): z.ZodObject<
     id: z.string(),
     name: z.string().nullish(),
     owners: z.array(z.string().nullish()).nullish(),
-    type: AccountTypeSchema.nullish(),
+    type: z.lazy(() => AccountTypeInputEnumSchema.nullish()),
   });
 }
 
@@ -99,6 +108,6 @@ export function UpdateAccountInputSchema(): z.ZodObject<
     id: z.string(),
     name: z.string().nullish(),
     owners: z.array(z.string().nullish()).nullish(),
-    type: AccountTypeSchema.nullish(),
+    type: z.lazy(() => AccountTypeInputEnumSchema.nullish()),
   });
 }

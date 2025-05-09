@@ -25,11 +25,11 @@ type AccountEntry {
 		chain: String
 		account: EthereumAddress
 		budgetPath: String
-		type: AccountType
+		type: Account_AccountType
 		owners: [PHID]
 }
 
-enum AccountType {
+enum Account_AccountType {
 	Protocol
 	Auditor
 	Operational
@@ -47,7 +47,7 @@ input CreateAccountInput {
 	chain: String
 	account: EthereumAddress
 	budgetPath: String
-	type: AccountType
+	type: AccountTypeInputEnum
 	owners: [PHID]
 }
 
@@ -58,10 +58,18 @@ input UpdateAccountInput {
     chain: String
     account: EthereumAddress
     budgetPath: String
-    type: AccountType
+    type: AccountTypeInputEnum
     owners: [PHID]
 }
 
 input DeleteAccountInput {
   id: ID!
 }
+
+ enum AccountTypeInputEnum {
+    Protocol
+    Auditor
+    Operational
+    Payment
+    Processor
+  }

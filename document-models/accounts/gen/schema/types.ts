@@ -63,10 +63,17 @@ export type AccountEntry = {
   id: Scalars["OID"]["output"];
   name: Maybe<Scalars["OLabel"]["output"]>;
   owners: Maybe<Array<Maybe<Scalars["PHID"]["output"]>>>;
-  type: Maybe<AccountType | `${AccountType}`>;
+  type: Maybe<Account_AccountType | `${Account_AccountType}`>;
 };
 
-export type AccountType =
+export type AccountTypeInputEnum =
+  | "Auditor"
+  | "Operational"
+  | "Payment"
+  | "Processor"
+  | "Protocol";
+
+export type Account_AccountType =
   | "Auditor"
   | "Operational"
   | "Payment"
@@ -85,7 +92,7 @@ export type CreateAccountInput = {
   id: Scalars["OID"]["input"];
   name?: InputMaybe<Scalars["OLabel"]["input"]>;
   owners?: InputMaybe<Array<InputMaybe<Scalars["PHID"]["input"]>>>;
-  type?: InputMaybe<AccountType | `${AccountType}`>;
+  type?: InputMaybe<AccountTypeInputEnum | `${AccountTypeInputEnum}`>;
 };
 
 export type DeleteAccountInput = {
@@ -100,5 +107,5 @@ export type UpdateAccountInput = {
   id: Scalars["OID"]["input"];
   name?: InputMaybe<Scalars["OLabel"]["input"]>;
   owners?: InputMaybe<Array<InputMaybe<Scalars["PHID"]["input"]>>>;
-  type?: InputMaybe<AccountType | `${AccountType}`>;
+  type?: InputMaybe<AccountTypeInputEnum | `${AccountTypeInputEnum}`>;
 };

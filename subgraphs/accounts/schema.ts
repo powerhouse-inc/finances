@@ -16,11 +16,11 @@ export const schema: DocumentNode = gql`
     chain: String
     account: EthereumAddress
     budgetPath: String
-    type: AccountType
+    type: Account_AccountType
     owners: [PHID]
   }
 
-  enum AccountType {
+  enum Account_AccountType {
     Protocol
     Auditor
     Operational
@@ -66,6 +66,7 @@ export const schema: DocumentNode = gql`
   """
   Module: Accounts
   """
+  
   input Accounts_CreateAccountInput {
     id: OID!
     name: OLabel
@@ -73,7 +74,7 @@ export const schema: DocumentNode = gql`
     chain: String
     account: EthereumAddress
     budgetPath: String
-    type: AccountType
+    type: AccountTypeInputEnum
     owners: [PHID]
   }
 
@@ -84,11 +85,19 @@ export const schema: DocumentNode = gql`
     chain: String
     account: EthereumAddress
     budgetPath: String
-    type: AccountType
+    type: AccountTypeInputEnum
     owners: [PHID]
   }
 
   input Accounts_DeleteAccountInput {
     id: ID!
+  }
+
+  enum AccountTypeInputEnum {
+    Protocol
+    Auditor
+    Operational
+    Payment
+    Processor
   }
 `;

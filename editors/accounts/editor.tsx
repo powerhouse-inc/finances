@@ -6,7 +6,7 @@ import type {
 import { useState, useEffect, useRef } from "react";
 import {
   type AccountsDocument,
-  type AccountType,
+  type Account_AccountType,
   actions as accountsActions,
 } from "../../document-models/accounts/index.js";
 import { actions as accountTransactionsActions } from "../../document-models/account-transactions/index.js";
@@ -35,7 +35,7 @@ export default function Editor(props: IProps) {
     name: string;
     account: string;
     budgetPath: string;
-    type: AccountType;
+    type: Account_AccountType;
     chain: string;
     accountTransactionsId: string;
     owners: string[];
@@ -598,7 +598,7 @@ export default function Editor(props: IProps) {
                   onChange={(e) =>
                     setNewAccount({
                       ...newAccount,
-                      type: e.target.value as AccountType,
+                      type: e.target.value as Account_AccountType,
                     })
                   }
                   style={{
