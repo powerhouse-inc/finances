@@ -3,7 +3,7 @@ import { setContext } from '@apollo/client/link/context';
 import { gql } from '@apollo/client';
 
 const httpLink = createHttpLink({
-  uri: 'http://localhost:4001/d/finances',
+  uri: 'https://switchboard.powerhouse.xyz/d/finances',
 });
 
 // Create an auth link that adds any necessary headers

@@ -1,10 +1,10 @@
 import { gql } from 'graphql-tag';
 import fetch, { Response } from 'node-fetch';
 
-const GRAPH_ENDPOINT = 'http://localhost:4001/d/finances';
-const ACCOUNT_TRANSACTIONS_ENDPOINT = 'http://localhost:4001/graphql/account-transactions';
-const ACCOUNTS_ENDPOINT = 'http://localhost:4001/graphql/accounts';
-const SYSTEM_ENDPOINT = 'http://localhost:4001/graphql';
+const GRAPH_ENDPOINT = 'https://switchboard.powerhouse.xyz/d/finances';
+const ACCOUNT_TRANSACTIONS_ENDPOINT = 'https://switchboard.powerhouse.xyz/graphql/account-transactions';
+const ACCOUNTS_ENDPOINT = 'https://switchboard.powerhouse.xyz/graphql/accounts';
+const SYSTEM_ENDPOINT = 'https://switchboard.powerhouse.xyz/graphql';
 const FETCH_TIMEOUT = 30000; // 30 seconds timeout
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 5000; // 5 seconds between retries
