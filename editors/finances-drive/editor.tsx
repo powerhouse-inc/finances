@@ -1,5 +1,5 @@
 import { type DriveEditorProps } from "@powerhousedao/reactor-browser";
-import { DriveContextProvider } from "@powerhousedao/reactor-browser/hooks/useDriveContext";
+import { DriveContextProvider } from "@powerhousedao/reactor-browser";
 import {
   type DocumentDriveDocument,
   addFolder,

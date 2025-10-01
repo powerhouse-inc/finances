@@ -6,8 +6,32 @@
         "name": "Powerhouse",
         "url": "https://powerhousedao.com"
     },
-    "documentModels": [],
-    "editors": [],
+    "documentModels": [
+        {
+            "id": "powerhouse/accounts",
+            "name": "Accounts"
+        },
+        {
+            "id": "powerhouse/account-transactions",
+            "name": "Account Transactions"
+        }
+    ],
+    "editors": [
+        {
+            "id": "accounts-editor",
+            "name": "Accounts",
+            "documentTypes": [
+                "powerhouse/accounts"
+            ]
+        },
+        {
+            "id": "account-transactions-editor",
+            "name": "Account Transactions",
+            "documentTypes": [
+                "powerhouse/account-transactions"
+            ]
+        }
+    ],
     "apps": [
         {
             "id": "finances-drive",
