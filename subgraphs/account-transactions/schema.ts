@@ -3,53 +3,11 @@ import type { DocumentNode } from "graphql";
 
 export const schema: DocumentNode = gql`
   """
-  Subgraph definition for AccountTransactions (powerhouse/account-transactions)
-  """
-  type AccountTransactionsState {
-    account: AgentLink
-    transactions: [TransactionEntry!]!
-    budgets: [Budget!]!
-  }
-
-  type TransactionEntry {
-    id: ID!
-    counterParty: EthereumAddress
-    amount: Amount_Tokens!
-    datetime: DateTime!
-    details: TransactionDetails!
-    budget: OID
-  }
-
-  type TransactionDetails {
-    txHash: String!
-    token: Currency!
-    blockNumber: Int
-  }
-
-  type Budget {
-    id: OID!
-    name: OLabel
-  }
-
-  type AgentLink {
-    id: PHID!
-    username: String
-    type: AgentType
-    icon: URL
-  }
-
-  enum AgentType {
-    CONTRIBUTOR
-    TEAM
-    AI
-  }
-
-  """
-  Queries: AccountTransactions
+  Queries: AccountTransactions Document
   """
   type AccountTransactionsQueries {
-    getDocument(driveId: String, docId: PHID): AccountTransactions
-    getDocuments: [AccountTransactions!]
+    getDocument(docId: PHID!, driveId: PHID): AccountTransactions
+    getDocuments(driveId: String!): [AccountTransactions!]
   }
 
   type Query {
@@ -60,12 +18,12 @@ export const schema: DocumentNode = gql`
   Mutations: AccountTransactions
   """
   type Mutation {
-    AccountTransactions_createDocument(driveId: String, name: String): String
+    AccountTransactions_createDocument(name: String!, driveId: String): String
 
-    AccountTransactions_createTransaction(
+    AccountTransactions_addTransaction(
       driveId: String
       docId: PHID
-      input: AccountTransactions_CreateTransactionInput
+      input: AccountTransactions_AddTransactionInput
     ): Int
     AccountTransactions_updateTransaction(
       driveId: String
@@ -77,62 +35,73 @@ export const schema: DocumentNode = gql`
       docId: PHID
       input: AccountTransactions_DeleteTransactionInput
     ): Int
-    AccountTransactions_updateTransactionBudget(
+    AccountTransactions_updateTransactionPeriod(
       driveId: String
       docId: PHID
-      input: AccountTransactions_UpdateTransactionBudgetInput
+      input: AccountTransactions_UpdateTransactionPeriodInput
     ): Int
-    AccountTransactions_updateAccount(
+    AccountTransactions_addBudget(
       driveId: String
       docId: PHID
-      input: AccountTransactions_UpdateAccountInput
+      input: AccountTransactions_AddBudgetInput
     ): Int
-    AccountTransactions_importTransactions(
+    AccountTransactions_updateBudget(
       driveId: String
       docId: PHID
-      input: AccountTransactions_ImportTransactionsInput
+      input: AccountTransactions_UpdateBudgetInput
+    ): Int
+    AccountTransactions_deleteBudget(
+      driveId: String
+      docId: PHID
+      input: AccountTransactions_DeleteBudgetInput
     ): Int
   }
 
   """
-  Module: AccountTransactions
+  Module: Transactions
   """
-  input AccountTransactions_CreateTransactionInput {
+  input AccountTransactions_AddTransactionInput {
     id: ID!
     counterParty: EthereumAddress
-    amount: Amount_Money!
+    amount: Amount_Currency!
     datetime: DateTime!
-    details: TransactionDetailsInput!
-    budget: OID
-  }
-
-  input TransactionDetailsInput {
     txHash: String!
     token: Currency!
     blockNumber: Int
+    budget: OID
+    accountingPeriod: String!
   }
-
   input AccountTransactions_UpdateTransactionInput {
     id: ID!
     counterParty: EthereumAddress
-    amount: Amount_Money
+    amount: Amount_Currency
     datetime: DateTime
-    details: TransactionDetailsInput
+    txHash: String
+    token: Currency
+    blockNumber: Int
     budget: OID
+    accountingPeriod: String
   }
-
   input AccountTransactions_DeleteTransactionInput {
     id: ID!
   }
-  input AccountTransactions_UpdateTransactionBudgetInput {
-    txId: ID!
-    budgetId: OID!
+  input AccountTransactions_UpdateTransactionPeriodInput {
+    id: ID!
+    accountingPeriod: String!
+  }
+
+  """
+  Module: Budgets
+  """
+  input AccountTransactions_AddBudgetInput {
+    id: OID!
     name: OLabel
   }
-  input AccountTransactions_UpdateAccountInput {
-    account: String
+  input AccountTransactions_UpdateBudgetInput {
+    id: OID!
+    name: OLabel
   }
-  input AccountTransactions_ImportTransactionsInput {
-    addresses: [EthereumAddress]
+  input AccountTransactions_DeleteBudgetInput {
+    id: OID!
   }
 `;

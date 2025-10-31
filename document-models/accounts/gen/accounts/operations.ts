@@ -1,15 +1,16 @@
 import { type SignalDispatch } from "document-model";
 import {
-  type CreateAccountAction,
+  type AddAccountAction,
   type UpdateAccountAction,
   type DeleteAccountAction,
+  type UpdateKycStatusAction,
 } from "./actions.js";
 import { type AccountsState } from "../types.js";
 
 export interface AccountsAccountsOperations {
-  createAccountOperation: (
+  addAccountOperation: (
     state: AccountsState,
-    action: CreateAccountAction,
+    action: AddAccountAction,
     dispatch?: SignalDispatch,
   ) => void;
   updateAccountOperation: (
@@ -20,6 +21,11 @@ export interface AccountsAccountsOperations {
   deleteAccountOperation: (
     state: AccountsState,
     action: DeleteAccountAction,
+    dispatch?: SignalDispatch,
+  ) => void;
+  updateKycStatusOperation: (
+    state: AccountsState,
+    action: UpdateKycStatusAction,
     dispatch?: SignalDispatch,
   ) => void;
 }

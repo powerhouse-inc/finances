@@ -1,17 +1,17 @@
 import { z } from "zod";
 import type {
+  Account,
   AccountTransactionsState,
-  AgentLink,
-  AgentType,
+  AddBudgetInput,
+  AddTransactionInput,
   Budget,
-  CreateTransactionInput,
+  DeleteBudgetInput,
   DeleteTransactionInput,
   TransactionDetails,
-  TransactionDetailsInput,
   TransactionEntry,
-  UpdateAccountInput,
-  UpdateTransactionBudgetInput,
+  UpdateBudgetInput,
   UpdateTransactionInput,
+  UpdateTransactionPeriodInput,
 } from "./types.js";
 
 type Properties<T> = Required<{
@@ -27,26 +27,59 @@ export const definedNonNullAnySchema = z
   .any()
   .refine((v) => isDefinedNonNullAny(v));
 
-export const AgentTypeSchema = z.enum(["AI", "CONTRIBUTOR", "TEAM"]);
+export function AccountSchema(): z.ZodObject<Properties<Account>> {
+  return z.object({
+    __typename: z.literal("Account").optional(),
+    KycAmlStatus: z.string().nullable(),
+    account: z.string(),
+    accountTransactionsId: z.string().nullable(),
+    budgetPath: z.string().nullable(),
+    chain: z.array(z.string()).nullable(),
+    id: z.string(),
+    name: z.string(),
+    owners: z.array(z.string()).nullable(),
+    type: z.string().nullable(),
+  });
+}
 
 export function AccountTransactionsStateSchema(): z.ZodObject<
   Properties<AccountTransactionsState>
 > {
   return z.object({
     __typename: z.literal("AccountTransactionsState").optional(),
-    account: AgentLinkSchema().nullable(),
+    account: AccountSchema(),
     budgets: z.array(BudgetSchema()),
     transactions: z.array(TransactionEntrySchema()),
   });
 }
 
-export function AgentLinkSchema(): z.ZodObject<Properties<AgentLink>> {
+export function AddBudgetInputSchema(): z.ZodObject<
+  Properties<AddBudgetInput>
+> {
   return z.object({
-    __typename: z.literal("AgentLink").optional(),
-    icon: z.string().url().nullable(),
     id: z.string(),
-    type: AgentTypeSchema.nullable(),
-    username: z.string().nullable(),
+    name: z.string().nullish(),
+  });
+}
+
+export function AddTransactionInputSchema(): z.ZodObject<
+  Properties<AddTransactionInput>
+> {
+  return z.object({
+    accountingPeriod: z.string(),
+    amount: z.object({ unit: z.string(), value: z.string() }),
+    blockNumber: z.number().nullish(),
+    budget: z.string().nullish(),
+    counterParty: z
+      .string()
+      .regex(/^0x[a-fA-F0-9]{40}$/, {
+        message: "Invalid Ethereum address format",
+      })
+      .nullish(),
+    datetime: z.string().datetime(),
+    id: z.string(),
+    token: z.string(),
+    txHash: z.string(),
   });
 }
 
@@ -58,20 +91,10 @@ export function BudgetSchema(): z.ZodObject<Properties<Budget>> {
   });
 }
 
-export function CreateTransactionInputSchema(): z.ZodObject<
-  Properties<CreateTransactionInput>
+export function DeleteBudgetInputSchema(): z.ZodObject<
+  Properties<DeleteBudgetInput>
 > {
   return z.object({
-    amount: z.number(),
-    budget: z.string().nullish(),
-    counterParty: z
-      .string()
-      .regex(/^0x[a-fA-F0-9]{40}$/, {
-        message: "Invalid Ethereum address format",
-      })
-      .nullish(),
-    datetime: z.string().datetime(),
-    details: z.lazy(() => TransactionDetailsInputSchema()),
     id: z.string(),
   });
 }
@@ -95,22 +118,13 @@ export function TransactionDetailsSchema(): z.ZodObject<
   });
 }
 
-export function TransactionDetailsInputSchema(): z.ZodObject<
-  Properties<TransactionDetailsInput>
-> {
-  return z.object({
-    blockNumber: z.number().nullish(),
-    token: z.string(),
-    txHash: z.string(),
-  });
-}
-
 export function TransactionEntrySchema(): z.ZodObject<
   Properties<TransactionEntry>
 > {
   return z.object({
     __typename: z.literal("TransactionEntry").optional(),
-    amount: z.number(),
+    accountingPeriod: z.string(),
+    amount: z.object({ unit: z.string(), value: z.string() }),
     budget: z.string().nullable(),
     counterParty: z
       .string()
@@ -124,21 +138,12 @@ export function TransactionEntrySchema(): z.ZodObject<
   });
 }
 
-export function UpdateAccountInputSchema(): z.ZodObject<
-  Properties<UpdateAccountInput>
+export function UpdateBudgetInputSchema(): z.ZodObject<
+  Properties<UpdateBudgetInput>
 > {
   return z.object({
-    account: z.string().nullish(),
-  });
-}
-
-export function UpdateTransactionBudgetInputSchema(): z.ZodObject<
-  Properties<UpdateTransactionBudgetInput>
-> {
-  return z.object({
-    budgetId: z.string(),
+    id: z.string(),
     name: z.string().nullish(),
-    txId: z.string(),
   });
 }
 
@@ -146,7 +151,9 @@ export function UpdateTransactionInputSchema(): z.ZodObject<
   Properties<UpdateTransactionInput>
 > {
   return z.object({
-    amount: z.number().nullish(),
+    accountingPeriod: z.string().nullish(),
+    amount: z.object({ unit: z.string(), value: z.string() }).nullish(),
+    blockNumber: z.number().nullish(),
     budget: z.string().nullish(),
     counterParty: z
       .string()
@@ -155,7 +162,17 @@ export function UpdateTransactionInputSchema(): z.ZodObject<
       })
       .nullish(),
     datetime: z.string().datetime().nullish(),
-    details: z.lazy(() => TransactionDetailsInputSchema().nullish()),
+    id: z.string(),
+    token: z.string().nullish(),
+    txHash: z.string().nullish(),
+  });
+}
+
+export function UpdateTransactionPeriodInputSchema(): z.ZodObject<
+  Properties<UpdateTransactionPeriodInput>
+> {
+  return z.object({
+    accountingPeriod: z.string(),
     id: z.string(),
   });
 }

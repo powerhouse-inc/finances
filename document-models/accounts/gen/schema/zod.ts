@@ -1,12 +1,15 @@
 import { z } from "zod";
 import type {
   AccountEntry,
-  AccountTypeInputEnum,
-  Account_AccountType,
+  AccountType,
+  AccountTypeInput,
   AccountsState,
-  CreateAccountInput,
+  AddAccountInput,
   DeleteAccountInput,
+  KycAmlStatusType,
+  KycAmlStatusTypeInput,
   UpdateAccountInput,
+  UpdateKycStatusInput,
 } from "./types.js";
 
 type Properties<T> = Required<{
@@ -22,38 +25,40 @@ export const definedNonNullAnySchema = z
   .any()
   .refine((v) => isDefinedNonNullAny(v));
 
-export const AccountTypeInputEnumSchema = z.enum([
+export const AccountTypeSchema = z.enum([
   "Auditor",
   "Operational",
-  "Payment",
-  "Processor",
+  "PaymentProcessor",
   "Protocol",
 ]);
 
-export const Account_AccountTypeSchema = z.enum([
+export const AccountTypeInputSchema = z.enum([
   "Auditor",
   "Operational",
-  "Payment",
-  "Processor",
+  "PaymentProcessor",
   "Protocol",
+]);
+
+export const KycAmlStatusTypeSchema = z.enum(["FAILED", "PASSED", "PENDING"]);
+
+export const KycAmlStatusTypeInputSchema = z.enum([
+  "FAILED",
+  "PASSED",
+  "PENDING",
 ]);
 
 export function AccountEntrySchema(): z.ZodObject<Properties<AccountEntry>> {
   return z.object({
     __typename: z.literal("AccountEntry").optional(),
-    account: z
-      .string()
-      .regex(/^0x[a-fA-F0-9]{40}$/, {
-        message: "Invalid Ethereum address format",
-      })
-      .nullable(),
+    KycAmlStatus: KycAmlStatusTypeSchema.nullable(),
+    account: z.string(),
     accountTransactionsId: z.string().nullable(),
     budgetPath: z.string().nullable(),
-    chain: z.string().nullable(),
+    chain: z.array(z.string()).nullable(),
     id: z.string(),
-    name: z.string().nullable(),
-    owners: z.array(z.string().nullable()).nullable(),
-    type: Account_AccountTypeSchema.nullable(),
+    name: z.string(),
+    owners: z.array(z.string()).nullable(),
+    type: AccountTypeSchema.nullable(),
   });
 }
 
@@ -64,23 +69,19 @@ export function AccountsStateSchema(): z.ZodObject<Properties<AccountsState>> {
   });
 }
 
-export function CreateAccountInputSchema(): z.ZodObject<
-  Properties<CreateAccountInput>
+export function AddAccountInputSchema(): z.ZodObject<
+  Properties<AddAccountInput>
 > {
   return z.object({
-    account: z
-      .string()
-      .regex(/^0x[a-fA-F0-9]{40}$/, {
-        message: "Invalid Ethereum address format",
-      })
-      .nullish(),
+    KycAmlStatus: z.lazy(() => KycAmlStatusTypeInputSchema.nullish()),
+    account: z.string(),
     accountTransactionsId: z.string().nullish(),
     budgetPath: z.string().nullish(),
-    chain: z.string().nullish(),
+    chain: z.array(z.string()).nullish(),
     id: z.string(),
-    name: z.string().nullish(),
-    owners: z.array(z.string().nullish()).nullish(),
-    type: z.lazy(() => AccountTypeInputEnumSchema.nullish()),
+    name: z.string(),
+    owners: z.array(z.string()).nullish(),
+    type: z.lazy(() => AccountTypeInputSchema.nullish()),
   });
 }
 
@@ -96,18 +97,23 @@ export function UpdateAccountInputSchema(): z.ZodObject<
   Properties<UpdateAccountInput>
 > {
   return z.object({
-    account: z
-      .string()
-      .regex(/^0x[a-fA-F0-9]{40}$/, {
-        message: "Invalid Ethereum address format",
-      })
-      .nullish(),
+    KycAmlStatus: z.lazy(() => KycAmlStatusTypeInputSchema.nullish()),
+    account: z.string().nullish(),
     accountTransactionsId: z.string().nullish(),
     budgetPath: z.string().nullish(),
-    chain: z.string().nullish(),
+    chain: z.array(z.string()).nullish(),
     id: z.string(),
     name: z.string().nullish(),
-    owners: z.array(z.string().nullish()).nullish(),
-    type: z.lazy(() => AccountTypeInputEnumSchema.nullish()),
+    owners: z.array(z.string()).nullish(),
+    type: z.lazy(() => AccountTypeInputSchema.nullish()),
+  });
+}
+
+export function UpdateKycStatusInputSchema(): z.ZodObject<
+  Properties<UpdateKycStatusInput>
+> {
+  return z.object({
+    KycAmlStatus: z.lazy(() => KycAmlStatusTypeInputSchema),
+    id: z.string(),
   });
 }

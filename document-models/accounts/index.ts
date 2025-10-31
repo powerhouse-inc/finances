@@ -4,24 +4,26 @@
  */
 
 import {
-  actions as BaseActions,
+  createState,
   type DocumentModelModule,
+  baseActions,
 } from "document-model";
+import { defaultBaseState } from "document-model/core";
 import { actions as AccountsActions } from "./gen/index.js";
 import { reducer } from "./gen/reducer.js";
 import { documentModel } from "./gen/document-model.js";
 import genUtils from "./gen/utils.js";
 import * as customUtils from "./src/utils.js";
-import { type AccountsDocument } from "./gen/types.js";
+import type { AccountsPHState } from "./gen/types.js";
 
 const utils = { ...genUtils, ...customUtils };
-const actions = { ...BaseActions, ...AccountsActions };
+const actions = { ...baseActions, ...AccountsActions };
 
-export const module: DocumentModelModule<AccountsDocument> = {
+export const module: DocumentModelModule<AccountsPHState> = {
   reducer,
   actions,
   utils,
-  documentModel,
+  documentModel: createState(defaultBaseState(), documentModel),
 };
 
 export { reducer, actions, utils, documentModel };

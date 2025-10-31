@@ -1,10 +1,10 @@
 {
     "name": "Finances",
-    "description": "Financial management and tracking tools",
+    "description": "A place where finances are handled and managed by a SNO",
     "category": "Finance",
     "publisher": {
         "name": "Powerhouse",
-        "url": "https://powerhousedao.com"
+        "url": "https://powerhouse.inc/"
     },
     "documentModels": [
         {
@@ -13,30 +13,34 @@
         },
         {
             "id": "powerhouse/account-transactions",
-            "name": "Account Transactions"
+            "name": "AccountTransactions"
         }
     ],
     "editors": [
         {
             "id": "accounts-editor",
-            "name": "Accounts",
+            "name": "accounts-editor",
             "documentTypes": [
                 "powerhouse/accounts"
             ]
         },
         {
             "id": "account-transactions-editor",
-            "name": "Account Transactions",
+            "name": "account-transactions-editor",
             "documentTypes": [
                 "powerhouse/account-transactions"
             ]
         }
+        
     ],
     "apps": [
         {
-            "id": "finances-drive",
-            "name": "Finances Drive",
-            "driveEditor": "finances-drive"
+            "id": "finances-editor",
+            "name": "Finances Drive Explorer",
+            "description": "Explore the finances drive and manage your finances",
+            "documentTypes": [
+                "powerhouse/document-drive"
+            ]
         }
     ],
     "subgraphs": [],

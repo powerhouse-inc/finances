@@ -1,17 +1,20 @@
-import type { PHDocument, ExtendedState } from "document-model";
-import type { AccountsState } from "./schema/types.js";
+import type { PHDocument, PHBaseState } from "document-model";
 import type { AccountsAction } from "./actions.js";
+import type { AccountsState as AccountsGlobalState } from "./schema/types.js";
 
 export { z } from "./schema/index.js";
-export type * from "./schema/types.js";
+export * from "./schema/types.js";
 type AccountsLocalState = Record<PropertyKey, never>;
-export type ExtendedAccountsState = ExtendedState<
-  AccountsState,
-  AccountsLocalState
->;
-export type AccountsDocument = PHDocument<
-  AccountsState,
+type AccountsPHState = PHBaseState & {
+  global: AccountsGlobalState;
+  local: AccountsLocalState;
+};
+type AccountsDocument = PHDocument<AccountsPHState>;
+
+export type {
+  AccountsGlobalState,
   AccountsLocalState,
-  AccountsAction
->;
-export type { AccountsState, AccountsLocalState, AccountsAction };
+  AccountsPHState,
+  AccountsAction,
+  AccountsDocument,
+};

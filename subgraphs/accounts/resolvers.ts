@@ -1,126 +1,190 @@
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-import { type Subgraph } from "@powerhousedao/reactor-api";
+import type { BaseSubgraph } from "@powerhousedao/reactor-api";
 import { addFile } from "document-drive";
-import { actions } from "../../document-models/accounts/index.js";
-import { generateId, hashKey } from "document-model";
+import {
+  actions,
+  type AddAccountInput,
+  type UpdateAccountInput,
+  type DeleteAccountInput,
+  type UpdateKycStatusInput,
+  type AccountsDocument,
+} from "../../document-models/accounts/index.js";
+import { setName } from "document-model";
 
-const DEFAULT_DRIVE_ID = "powerhouse";
-
-export const getResolvers = (subgraph: Subgraph): Record<string, any> => {
+export const getResolvers = (
+  subgraph: BaseSubgraph,
+): Record<string, unknown> => {
   const reactor = subgraph.reactor;
 
   return {
     Query: {
-      Accounts: async (_: any, args: any, ctx: any) => {
+      Accounts: async () => {
         return {
-          getDocument: async (args: any) => {
-            const driveId: string = args.driveId || DEFAULT_DRIVE_ID;
-            const docId: string = args.docId || "";
-            const doc = await reactor.getDocument(driveId, docId);
+          getDocument: async (args: { docId: string; driveId: string }) => {
+            const { docId, driveId } = args;
+
+            if (!docId) {
+              throw new Error("Document id is required");
+            }
+
+            if (driveId) {
+              const docIds = await reactor.getDocuments(driveId);
+              if (!docIds.includes(docId)) {
+                throw new Error(
+                  `Document with id ${docId} is not part of ${driveId}`,
+                );
+              }
+            }
+
+            const doc = await reactor.getDocument<AccountsDocument>(docId);
             return {
-              id: docId,
               driveId: driveId,
               ...doc,
+              ...doc.header,
+              created: doc.header.createdAtUtcIso,
+              lastModified: doc.header.lastModifiedAtUtcIso,
               state: doc.state.global,
               stateJSON: doc.state.global,
-              revision: doc.revision.global,
+              revision: doc.header?.revision?.global ?? 0,
             };
           },
-          getDocuments: async (args: any) => {
-            const driveId: string = args.driveId || DEFAULT_DRIVE_ID;
+          getDocuments: async (args: { driveId: string }) => {
+            const { driveId } = args;
             const docsIds = await reactor.getDocuments(driveId);
             const docs = await Promise.all(
               docsIds.map(async (docId) => {
-                const doc = await reactor.getDocument(driveId, docId);
+                const doc = await reactor.getDocument<AccountsDocument>(docId);
                 return {
-                  id: docId,
                   driveId: driveId,
                   ...doc,
+                  ...doc.header,
+                  created: doc.header.createdAtUtcIso,
+                  lastModified: doc.header.lastModifiedAtUtcIso,
                   state: doc.state.global,
                   stateJSON: doc.state.global,
-                  revision: doc.revision.global,
+                  revision: doc.header?.revision?.global ?? 0,
                 };
               }),
             );
 
             return docs.filter(
-              (doc) => doc.documentType === "powerhouse/accounts",
+              (doc) => doc.header.documentType === "powerhouse/accounts",
             );
           },
         };
       },
     },
     Mutation: {
-      Accounts_createDocument: async (_: any, args: any) => {
-        const driveId: string = args.driveId || DEFAULT_DRIVE_ID;
-        const docId = generateId();
+      Accounts_createDocument: async (
+        _: unknown,
+        args: { name: string; driveId?: string },
+      ) => {
+        const { driveId, name } = args;
+        const document = await reactor.addDocument("powerhouse/accounts");
 
-        await reactor.addDriveAction(
-          driveId,
-          addFile({
-            id: docId,
-            name: args.name,
-            documentType: "powerhouse/accounts",
-            synchronizationUnits: [
-              {
-                branch: "main",
-                scope: "global",
-                syncId: hashKey(),
-              },
-              {
-                branch: "main",
-                scope: "local",
-                syncId: hashKey(),
-              },
-            ],
-          }),
-        );
+        if (driveId) {
+          await reactor.addAction(
+            driveId,
+            addFile({
+              name,
+              id: document.header.id,
+              documentType: "powerhouse/accounts",
+            }),
+          );
+        }
 
-        return docId;
+        if (name) {
+          await reactor.addAction(document.header.id, setName(name));
+        }
+
+        return document.header.id;
       },
 
-      Accounts_createAccount: async (_: any, args: any) => {
-        const driveId: string = args.driveId || DEFAULT_DRIVE_ID;
-        const docId: string = args.docId || "";
-        const doc = await reactor.getDocument(driveId, docId);
+      Accounts_addAccount: async (
+        _: unknown,
+        args: { docId: string; input: AddAccountInput },
+      ) => {
+        const { docId, input } = args;
+        const doc = await reactor.getDocument<AccountsDocument>(docId);
+        if (!doc) {
+          throw new Error("Document not found");
+        }
 
-        await reactor.addAction(
-          driveId,
+        const result = await reactor.addAction(
           docId,
-          actions.createAccount({ ...args.input }),
+          actions.addAccount(input),
         );
 
-        return doc.revision.global + 1;
+        if (result.status !== "SUCCESS") {
+          throw new Error(result.error?.message ?? "Failed to addAccount");
+        }
+
+        return true;
       },
 
-      Accounts_updateAccount: async (_: any, args: any) => {
-        const driveId: string = args.driveId || DEFAULT_DRIVE_ID;
-        const docId: string = args.docId || "";
-        const doc = await reactor.getDocument(driveId, docId);
+      Accounts_updateAccount: async (
+        _: unknown,
+        args: { docId: string; input: UpdateAccountInput },
+      ) => {
+        const { docId, input } = args;
+        const doc = await reactor.getDocument<AccountsDocument>(docId);
+        if (!doc) {
+          throw new Error("Document not found");
+        }
 
-        await reactor.addAction(
-          driveId,
+        const result = await reactor.addAction(
           docId,
-          actions.updateAccount({ ...args.input }),
+          actions.updateAccount(input),
         );
 
-        return doc.revision.global + 1;
+        if (result.status !== "SUCCESS") {
+          throw new Error(result.error?.message ?? "Failed to updateAccount");
+        }
+
+        return true;
       },
 
-      Accounts_deleteAccount: async (_: any, args: any) => {
-        const driveId: string = args.driveId || DEFAULT_DRIVE_ID;
-        const docId: string = args.docId || "";
-        const doc = await reactor.getDocument(driveId, docId);
+      Accounts_deleteAccount: async (
+        _: unknown,
+        args: { docId: string; input: DeleteAccountInput },
+      ) => {
+        const { docId, input } = args;
+        const doc = await reactor.getDocument<AccountsDocument>(docId);
+        if (!doc) {
+          throw new Error("Document not found");
+        }
 
-        await reactor.addAction(
-          driveId,
+        const result = await reactor.addAction(
           docId,
-          actions.deleteAccount({ ...args.input }),
+          actions.deleteAccount(input),
         );
 
-        return doc.revision.global + 1;
+        if (result.status !== "SUCCESS") {
+          throw new Error(result.error?.message ?? "Failed to deleteAccount");
+        }
+
+        return true;
+      },
+
+      Accounts_updateKycStatus: async (
+        _: unknown,
+        args: { docId: string; input: UpdateKycStatusInput },
+      ) => {
+        const { docId, input } = args;
+        const doc = await reactor.getDocument<AccountsDocument>(docId);
+        if (!doc) {
+          throw new Error("Document not found");
+        }
+
+        const result = await reactor.addAction(
+          docId,
+          actions.updateKycStatus(input),
+        );
+
+        if (result.status !== "SUCCESS") {
+          throw new Error(result.error?.message ?? "Failed to updateKycStatus");
+        }
+
+        return true;
       },
     },
   };

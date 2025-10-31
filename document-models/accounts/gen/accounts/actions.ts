@@ -1,27 +1,30 @@
-import { type BaseAction } from "document-model";
+import { type Action } from "document-model";
 import type {
-  CreateAccountInput,
+  AddAccountInput,
   UpdateAccountInput,
   DeleteAccountInput,
+  UpdateKycStatusInput,
 } from "../types.js";
 
-export type CreateAccountAction = BaseAction<
-  "CREATE_ACCOUNT",
-  CreateAccountInput,
-  "global"
->;
-export type UpdateAccountAction = BaseAction<
-  "UPDATE_ACCOUNT",
-  UpdateAccountInput,
-  "global"
->;
-export type DeleteAccountAction = BaseAction<
-  "DELETE_ACCOUNT",
-  DeleteAccountInput,
-  "global"
->;
+export type AddAccountAction = Action & {
+  type: "ADD_ACCOUNT";
+  input: AddAccountInput;
+};
+export type UpdateAccountAction = Action & {
+  type: "UPDATE_ACCOUNT";
+  input: UpdateAccountInput;
+};
+export type DeleteAccountAction = Action & {
+  type: "DELETE_ACCOUNT";
+  input: DeleteAccountInput;
+};
+export type UpdateKycStatusAction = Action & {
+  type: "UPDATE_KYC_STATUS";
+  input: UpdateKycStatusInput;
+};
 
 export type AccountsAccountsAction =
-  | CreateAccountAction
+  | AddAccountAction
   | UpdateAccountAction
-  | DeleteAccountAction;
+  | DeleteAccountAction
+  | UpdateKycStatusAction;

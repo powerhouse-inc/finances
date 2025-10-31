@@ -1,22 +1,24 @@
-import { createAction } from "document-model";
+import { createAction } from "document-model/core";
 import {
   z,
-  type CreateAccountInput,
+  type AddAccountInput,
   type UpdateAccountInput,
   type DeleteAccountInput,
+  type UpdateKycStatusInput,
 } from "../types.js";
 import {
-  type CreateAccountAction,
+  type AddAccountAction,
   type UpdateAccountAction,
   type DeleteAccountAction,
+  type UpdateKycStatusAction,
 } from "./actions.js";
 
-export const createAccount = (input: CreateAccountInput) =>
-  createAction<CreateAccountAction>(
-    "CREATE_ACCOUNT",
+export const addAccount = (input: AddAccountInput) =>
+  createAction<AddAccountAction>(
+    "ADD_ACCOUNT",
     { ...input },
     undefined,
-    z.CreateAccountInputSchema,
+    z.AddAccountInputSchema,
     "global",
   );
 
@@ -35,5 +37,14 @@ export const deleteAccount = (input: DeleteAccountInput) =>
     { ...input },
     undefined,
     z.DeleteAccountInputSchema,
+    "global",
+  );
+
+export const updateKycStatus = (input: UpdateKycStatusInput) =>
+  createAction<UpdateKycStatusAction>(
+    "UPDATE_KYC_STATUS",
+    { ...input },
+    undefined,
+    z.UpdateKycStatusInputSchema,
     "global",
   );

@@ -30,12 +30,12 @@ export type Scalars = {
     output: { unit?: string; value?: number };
   };
   Amount_Crypto: {
-    input: { unit: string; value: number };
-    output: { unit: string; value: number };
+    input: { unit: string; value: string };
+    output: { unit: string; value: string };
   };
   Amount_Currency: {
-    input: { unit: string; value: number };
-    output: { unit: string; value: number };
+    input: { unit: string; value: string };
+    output: { unit: string; value: string };
   };
   Amount_Fiat: {
     input: { unit: string; value: number };
@@ -53,59 +53,70 @@ export type Scalars = {
   OLabel: { input: string; output: string };
   PHID: { input: string; output: string };
   URL: { input: string; output: string };
+  Upload: { input: File; output: File };
 };
 
 export type AccountEntry = {
-  account: Maybe<Scalars["EthereumAddress"]["output"]>;
+  KycAmlStatus: Maybe<KycAmlStatusType | `${KycAmlStatusType}`>;
+  account: Scalars["String"]["output"];
   accountTransactionsId: Maybe<Scalars["PHID"]["output"]>;
   budgetPath: Maybe<Scalars["String"]["output"]>;
-  chain: Maybe<Scalars["String"]["output"]>;
+  chain: Maybe<Array<Scalars["String"]["output"]>>;
   id: Scalars["OID"]["output"];
-  name: Maybe<Scalars["OLabel"]["output"]>;
-  owners: Maybe<Array<Maybe<Scalars["PHID"]["output"]>>>;
-  type: Maybe<Account_AccountType | `${Account_AccountType}`>;
+  name: Scalars["String"]["output"];
+  owners: Maybe<Array<Scalars["String"]["output"]>>;
+  type: Maybe<AccountType | `${AccountType}`>;
 };
 
-export type AccountTypeInputEnum =
+export type AccountType =
   | "Auditor"
   | "Operational"
-  | "Payment"
-  | "Processor"
+  | "PaymentProcessor"
   | "Protocol";
 
-export type Account_AccountType =
+export type AccountTypeInput =
   | "Auditor"
   | "Operational"
-  | "Payment"
-  | "Processor"
+  | "PaymentProcessor"
   | "Protocol";
 
 export type AccountsState = {
   accounts: Array<AccountEntry>;
 };
 
-export type CreateAccountInput = {
-  account?: InputMaybe<Scalars["EthereumAddress"]["input"]>;
+export type AddAccountInput = {
+  KycAmlStatus?: InputMaybe<KycAmlStatusTypeInput | `${KycAmlStatusTypeInput}`>;
+  account: Scalars["String"]["input"];
   accountTransactionsId?: InputMaybe<Scalars["PHID"]["input"]>;
   budgetPath?: InputMaybe<Scalars["String"]["input"]>;
-  chain?: InputMaybe<Scalars["String"]["input"]>;
+  chain?: InputMaybe<Array<Scalars["String"]["input"]>>;
   id: Scalars["OID"]["input"];
-  name?: InputMaybe<Scalars["OLabel"]["input"]>;
-  owners?: InputMaybe<Array<InputMaybe<Scalars["PHID"]["input"]>>>;
-  type?: InputMaybe<AccountTypeInputEnum | `${AccountTypeInputEnum}`>;
+  name: Scalars["String"]["input"];
+  owners?: InputMaybe<Array<Scalars["String"]["input"]>>;
+  type?: InputMaybe<AccountTypeInput | `${AccountTypeInput}`>;
 };
 
 export type DeleteAccountInput = {
-  id: Scalars["ID"]["input"];
+  id: Scalars["OID"]["input"];
 };
 
+export type KycAmlStatusType = "FAILED" | "PASSED" | "PENDING";
+
+export type KycAmlStatusTypeInput = "FAILED" | "PASSED" | "PENDING";
+
 export type UpdateAccountInput = {
-  account?: InputMaybe<Scalars["EthereumAddress"]["input"]>;
+  KycAmlStatus?: InputMaybe<KycAmlStatusTypeInput | `${KycAmlStatusTypeInput}`>;
+  account?: InputMaybe<Scalars["String"]["input"]>;
   accountTransactionsId?: InputMaybe<Scalars["PHID"]["input"]>;
   budgetPath?: InputMaybe<Scalars["String"]["input"]>;
-  chain?: InputMaybe<Scalars["String"]["input"]>;
+  chain?: InputMaybe<Array<Scalars["String"]["input"]>>;
   id: Scalars["OID"]["input"];
-  name?: InputMaybe<Scalars["OLabel"]["input"]>;
-  owners?: InputMaybe<Array<InputMaybe<Scalars["PHID"]["input"]>>>;
-  type?: InputMaybe<AccountTypeInputEnum | `${AccountTypeInputEnum}`>;
+  name?: InputMaybe<Scalars["String"]["input"]>;
+  owners?: InputMaybe<Array<Scalars["String"]["input"]>>;
+  type?: InputMaybe<AccountTypeInput | `${AccountTypeInput}`>;
+};
+
+export type UpdateKycStatusInput = {
+  KycAmlStatus: KycAmlStatusTypeInput | `${KycAmlStatusTypeInput}`;
+  id: Scalars["OID"]["input"];
 };

@@ -1,56 +1,50 @@
+import type { DocumentModelUtils } from "document-model";
 import {
-  type DocumentModelUtils,
   baseCreateDocument,
-  baseCreateExtendedState,
-  baseSaveToFile,
   baseSaveToFileHandle,
-  baseLoadFromFile,
   baseLoadFromInput,
-} from "document-model";
-import {
-  type AccountsDocument,
-  type AccountsState,
-  type AccountsLocalState,
-} from "./types.js";
+  defaultBaseState,
+  generateId,
+} from "document-model/core";
+import type { AccountsGlobalState, AccountsLocalState } from "./types.js";
+import type { AccountsPHState } from "./types.js";
 import { reducer } from "./reducer.js";
 
-export const initialGlobalState: AccountsState = {
+export const initialGlobalState: AccountsGlobalState = {
   accounts: [],
 };
 export const initialLocalState: AccountsLocalState = {};
 
-const utils: DocumentModelUtils<AccountsDocument> = {
+const utils: DocumentModelUtils<AccountsPHState> = {
   fileExtension: ".phdm",
   createState(state) {
     return {
+      ...defaultBaseState(),
       global: { ...initialGlobalState, ...state?.global },
       local: { ...initialLocalState, ...state?.local },
     };
   },
-  createExtendedState(extendedState) {
-    return baseCreateExtendedState(
-      { ...extendedState, documentType: "powerhouse/accounts" },
-      utils.createState,
-    );
-  },
   createDocument(state) {
-    return baseCreateDocument(
-      utils.createExtendedState(state),
-      utils.createState,
-    );
-  },
-  saveToFile(document, path, name) {
-    return baseSaveToFile(document, path, ".phdm", name);
+    const document = baseCreateDocument(utils.createState, state);
+
+    document.header.documentType = "powerhouse/accounts";
+
+    // for backwards compatibility, but this is NOT a valid signed document id
+    document.header.id = generateId();
+
+    return document;
   },
   saveToFileHandle(document, input) {
     return baseSaveToFileHandle(document, input);
-  },
-  loadFromFile(path) {
-    return baseLoadFromFile(path, reducer);
   },
   loadFromInput(input) {
     return baseLoadFromInput(input, reducer);
   },
 };
+
+export const createDocument = utils.createDocument;
+export const createState = utils.createState;
+export const saveToFileHandle = utils.saveToFileHandle;
+export const loadFromInput = utils.loadFromInput;
 
 export default utils;
