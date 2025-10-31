@@ -3,37 +3,11 @@ import type { DocumentNode } from "graphql";
 
 export const schema: DocumentNode = gql`
   """
-  Subgraph definition for Accounts (powerhouse/accounts)
-  """
-  type AccountsState {
-    accounts: [AccountEntry!]!
-  }
-
-  type AccountEntry {
-    id: OID!
-    name: OLabel
-    accountTransactionsId: PHID
-    chain: String
-    account: EthereumAddress
-    budgetPath: String
-    type: AccountType
-    owners: [PHID]
-  }
-
-  enum AccountType {
-    Protocol
-    Auditor
-    Operational
-    Payment
-    Processor
-  }
-
-  """
-  Queries: Accounts
+  Queries: Accounts Document
   """
   type AccountsQueries {
-    getDocument(driveId: String, docId: PHID): Accounts
-    getDocuments: [Accounts!]
+    getDocument(docId: PHID!, driveId: PHID): Accounts
+    getDocuments(driveId: String!): [Accounts!]
   }
 
   type Query {
@@ -44,12 +18,12 @@ export const schema: DocumentNode = gql`
   Mutations: Accounts
   """
   type Mutation {
-    Accounts_createDocument(driveId: String, name: String): String
+    Accounts_createDocument(name: String!, driveId: String): String
 
-    Accounts_createAccount(
+    Accounts_addAccount(
       driveId: String
       docId: PHID
-      input: Accounts_CreateAccountInput
+      input: Accounts_AddAccountInput
     ): Int
     Accounts_updateAccount(
       driveId: String
@@ -61,35 +35,57 @@ export const schema: DocumentNode = gql`
       docId: PHID
       input: Accounts_DeleteAccountInput
     ): Int
+    Accounts_updateKycStatus(
+      driveId: String
+      docId: PHID
+      input: Accounts_UpdateKycStatusInput
+    ): Int
   }
 
   """
   Module: Accounts
   """
-  input Accounts_CreateAccountInput {
+  input Accounts_AddAccountInput {
     id: OID!
-    name: OLabel
-    accountTransactionsId: PHID
-    chain: String
-    account: EthereumAddress
+    account: String!
+    name: String!
     budgetPath: String
-    type: AccountType
-    owners: [PHID]
+    accountTransactionsId: PHID
+    chain: [String!]
+    type: AccountTypeInput
+    owners: [String!]
+    KycAmlStatus: KycAmlStatusTypeInput
   }
 
+  enum AccountTypeInput {
+    Protocol
+    Auditor
+    Operational
+    PaymentProcessor
+  }
 
+  enum KycAmlStatusTypeInput {
+    PASSED
+    PENDING
+    FAILED
+  }
   input Accounts_UpdateAccountInput {
     id: OID!
-    name: OLabel
-    accountTransactionsId: PHID
-    chain: String
-    account: EthereumAddress
+    account: String
+    name: String
     budgetPath: String
-    type: AccountType
-    owners: [PHID]
+    accountTransactionsId: PHID
+    chain: [String!]
+    type: AccountTypeInput
+    owners: [String!]
+    KycAmlStatus: KycAmlStatusTypeInput
   }
 
   input Accounts_DeleteAccountInput {
-    id: ID!
+    id: OID!
+  }
+  input Accounts_UpdateKycStatusInput {
+    id: OID!
+    KycAmlStatus: KycAmlStatusTypeInput!
   }
 `;

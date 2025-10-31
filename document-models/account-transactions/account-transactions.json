@@ -1,92 +1,121 @@
 {
+    "author": {
+        "name": "Powerhouse",
+        "website": "https://powerhouse.inc"
+    },
+    "description": "The AccountTransactions model is designed to track and manage all transactions associated with various accounts. Each transaction entry records critical details such as the source and destination accounts, transaction amount, timestamp, and specific transaction details tailored to the type of transaction (e.g., cryptocurrency or bank-related).",
+    "extension": ".phdm",
     "id": "powerhouse/account-transactions",
     "name": "AccountTransactions",
-    "extension": ".phdm",
-    "description": "The AccountTransactions model is designed to track and manage all transactions associated with various accounts. Each transaction entry records critical details such as the source and destination accounts, transaction amount, timestamp, and specific transaction details tailored to the type of transaction (e.g., cryptocurrency or bank-related).",
-    "author": {
-        "name": "Teep",
-        "website": ""
-    },
     "specifications": [
         {
-            "version": 1,
             "changeLog": [],
-            "state": {
-                "global": {
-                    "schema": "type AccountTransactionsState {\n  account: AgentLink\n  transactions: [TransactionEntry!]!\n  budgets: [Budget!]!\n}\n\ntype TransactionEntry {\n  id: ID!\n  counterParty: EthereumAddress\n  amount: Amount_Tokens!\n  datetime: DateTime!\n  details: TransactionDetails!\n  budget: OID\n}\n\ntype TransactionDetails {\n  txHash: String!\n  token: Currency!\n  blockNumber: Int\n}\n\ntype Budget {\n  id: OID!\n  name: OLabel\n}\n\ntype AgentLink {\n  id: PHID!\n  username: String\n  type: AgentType\n  icon: URL\n}\n\nenum AgentType {\n  CONTRIBUTOR\n  TEAM\n  AI\n}\n",
-                    "initialValue": "{\n  \"account\": {\n    \"id\": \"\",\n    \"username\": \"\",\n    \"type\": \"CONTRIBUTOR\",\n    \"icon\": \"\"\n  },\n  \"transactions\": [],\n  \"budgets\": []\n}",
-                    "examples": []
-                },
-                "local": {
-                    "schema": "",
-                    "initialValue": "",
-                    "examples": []
-                }
-            },
             "modules": [
                 {
-                    "id": "87XGHGmHfCwsHcJWzg8vfHUEF3k=",
-                    "name": "account_transactions",
                     "description": "",
+                    "id": "4155a659-ce1c-40af-aa15-f8daed5c8bb9",
+                    "name": "transactions",
                     "operations": [
                         {
-                            "id": "Sogtf1zw5A7oeK5/bloa3DYaB+k=",
-                            "name": "CREATE_TRANSACTION",
-                            "description": "Adds a new transaction to the account transactions state.",
-                            "schema": "input CreateTransactionInput {\n  counterParty: EthereumAddress\n  amount: Amount_Money!\n  datetime: DateTime!\n  details: TransactionDetailsInput!\n  budget: OID\n}\n\ninput TransactionDetailsInput {\n  txHash: String!\n  token: Currency!\n  blockNumber: Int\n}\n\ninput Budget {\n  id: OID!\n  name: OLabel\n}",
-                            "template": "",
-                            "reducer": "",
+                            "description": "",
                             "errors": [],
                             "examples": [],
-                            "scope": "global"
+                            "id": "455d3b21-245e-415f-a13f-0638c8621c1f",
+                            "name": "ADD_TRANSACTION",
+                            "reducer": "",
+                            "schema": "input AddTransactionInput {\n    id: ID!\n    counterParty: EthereumAddress\n    amount: Amount_Currency!\n    datetime: DateTime!\n    txHash: String!\n    token: Currency!\n    blockNumber: Int\n    budget: OID\n    accountingPeriod: String!\n}",
+                            "scope": "global",
+                            "template": ""
                         },
                         {
-                            "id": "kVD5pEzD+MwUp+AX3edMzGXo2F8=",
+                            "description": "",
+                            "errors": [],
+                            "examples": [],
+                            "id": "85136596-ac66-4d51-afff-4e9d938eacf2",
                             "name": "UPDATE_TRANSACTION",
-                            "description": "Updates an existing transaction in the account transactions state.",
-                            "schema": "input UpdateTransactionInput {\n  counterParty: EthereumAddress\n  amount: Amount_Money\n  datetime: DateTime\n  details: TransactionDetailsInput\n  budget: OID\n}\n\ninput TransactionDetailsInput {\n  txHash: String\n  token: Currency\n  blockNumber: Int\n}\n\ninput Budget {\n  id: OID!\n  name: OLabel\n}",
-                            "template": "",
                             "reducer": "",
-                            "errors": [],
-                            "examples": [],
-                            "scope": "global"
+                            "schema": "input UpdateTransactionInput {\n    id: ID!\n    counterParty: EthereumAddress\n    amount: Amount_Currency\n    datetime: DateTime\n    txHash: String\n    token: Currency\n    blockNumber: Int\n    budget: OID\n    accountingPeriod: String\n}",
+                            "scope": "global",
+                            "template": ""
                         },
                         {
-                            "id": "H6LY3kgfE5v2TjlY5Y/3gw04jKU=",
+                            "description": "",
+                            "errors": [],
+                            "examples": [],
+                            "id": "a36e6833-29f5-42b0-89e7-796395b2bcfa",
                             "name": "DELETE_TRANSACTION",
-                            "description": "Deletes a transaction from the account transactions state by its ID.",
-                            "schema": "input DeleteTransactionInput {\n  id: ID!\n}",
-                            "template": "",
                             "reducer": "",
-                            "errors": [],
-                            "examples": [],
-                            "scope": "global"
+                            "schema": "input DeleteTransactionInput {\n    id: ID!\n}",
+                            "scope": "global",
+                            "template": ""
                         },
                         {
-                            "id": "ooDUdEyVaH1nMemvuBUeg66juac=",
-                            "name": "UPDATE_TRANSACTION_BUDGET",
-                            "description": "Updates the budget associated with a specific transaction.",
-                            "schema": "input UpdateTransactionBudgetInput {\n  txId: ID!,\n  budgetId: OID!\n}",
-                            "template": "",
-                            "reducer": "",
+                            "description": "",
                             "errors": [],
                             "examples": [],
-                            "scope": "global"
+                            "id": "f04f4491-9ca9-4ceb-8fc7-7d181b36a4ab",
+                            "name": "UPDATE_TRANSACTION_PERIOD",
+                            "reducer": "",
+                            "schema": "input UpdateTransactionPeriodInput {\n    id: ID!\n    accountingPeriod: String!\n}",
+                            "scope": "global",
+                            "template": ""
+                        }
+                    ]
+                },
+                {
+                    "description": "",
+                    "id": "eecc4935-5db5-439d-917d-0f3b9b22c014",
+                    "name": "budgets",
+                    "operations": [
+                        {
+                            "description": "",
+                            "errors": [],
+                            "examples": [],
+                            "id": "b0f87610-5ecd-4659-adad-5dccd61362f2",
+                            "name": "ADD_BUDGET",
+                            "reducer": "",
+                            "schema": "input AddBudgetInput {\n    id: OID!\n    name: OLabel\n}",
+                            "scope": "global",
+                            "template": ""
                         },
                         {
-                            "id": "ClxED1TdWP656+cfE2/rqFFfq1Q=",
-                            "name": "UPDATE_ACCOUNT",
-                            "description": "Update the account associated with the transaction document",
-                            "schema": "input UpdateAccountInput {\n  account: String\n}",
-                            "template": "",
-                            "reducer": "",
+                            "description": "",
                             "errors": [],
                             "examples": [],
-                            "scope": "global"
+                            "id": "3bc3dea9-9955-4c8b-8639-7e36cd1258d7",
+                            "name": "UPDATE_BUDGET",
+                            "reducer": "",
+                            "schema": "input UpdateBudgetInput {\n    id: OID!\n    name: OLabel\n}",
+                            "scope": "global",
+                            "template": ""
+                        },
+                        {
+                            "description": "",
+                            "errors": [],
+                            "examples": [],
+                            "id": "88da5742-15c1-453e-a393-cc171e76b3cc",
+                            "name": "DELETE_BUDGET",
+                            "reducer": "",
+                            "schema": "input DeleteBudgetInput {\n    id: OID!\n}",
+                            "scope": "global",
+                            "template": ""
                         }
                     ]
                 }
-            ]
+            ],
+            "state": {
+                "global": {
+                    "examples": [],
+                    "initialValue": "{\n  \"account\": {\n    \"account\": \"\",\n    \"name\": \"\",\n    \"budgetPath\": null,\n    \"accountTransactionsId\": null,\n    \"chain\": null,\n    \"type\": null,\n    \"owners\": null,\n    \"KycAmlStatus\": null\n  },\n  \"transactions\": [],\n  \"budgets\": []\n}",
+                    "schema": "type AccountTransactionsState {\n  account: Account!\n  transactions: [TransactionEntry!]!\n  budgets: [Budget!]!\n}\n\ntype Account {\n    id: OID!\n    account: String!\n    name: String!\n    budgetPath: String\n    accountTransactionsId: PHID\n    chain: [String!]\n    type: String\n    owners: [String!]\n    KycAmlStatus: String\n}\n\ntype TransactionDetails {\n    txHash: String!\n    token: Currency!\n    blockNumber: Int\n}\n\ntype TransactionEntry {\n    id: ID!\n    counterParty: EthereumAddress\n    amount: Amount_Currency!\n    datetime: DateTime!\n    details: TransactionDetails!\n    budget: OID\n    accountingPeriod: String! # Analytics engine period definition\n}\n\ntype Budget {\n    id: OID!\n    name: OLabel\n}"
+                },
+                "local": {
+                    "examples": [],
+                    "initialValue": "",
+                    "schema": ""
+                }
+            },
+            "version": 1
         }
     ]
 }

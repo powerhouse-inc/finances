@@ -14,55 +14,83 @@ scalar Amount_Fiat
 scalar Amount_Currency
 scalar Amount_Crypto
 scalar Amount
+scalar Upload
 type AccountsState {
-    accounts: [ AccountEntry! ]!
+   accounts: [AccountEntry!]!
 }
 
 type AccountEntry {
-		id: OID!
-		name: OLabel  
-		accountTransactionsId: PHID
-		chain: String
-		account: EthereumAddress
-		budgetPath: String
-		type: AccountType
-		owners: [PHID]
+    id: OID!
+    account: String!
+    name: String!
+    budgetPath: String
+    accountTransactionsId: PHID
+    chain: [String!]
+    type: AccountType
+    owners: [String!]
+    KycAmlStatus: KycAmlStatusType
 }
 
 enum AccountType {
-	Protocol
-	Auditor
-	Operational
-	Payment Processor
+    Protocol
+    Auditor
+    Operational
+    PaymentProcessor
+}
+
+enum KycAmlStatusType {
+    PASSED
+    PENDING
+    FAILED
 }
 
 
 
 # accounts
 
-input CreateAccountInput {
-    id: OID!
-	name: OLabel  		
-    accountTransactionsId: PHID
-	chain: String
-	account: EthereumAddress
-	budgetPath: String
-	type: AccountType
-	owners: [PHID]
+input AddAccountInput {
+  id: OID!
+  account: String!
+  name: String!
+  budgetPath: String
+  accountTransactionsId: PHID
+  chain: [String!]
+  type: AccountTypeInput
+  owners: [String!]
+  KycAmlStatus: KycAmlStatusTypeInput
+}
+
+enum AccountTypeInput {
+  Protocol
+  Auditor
+  Operational
+  PaymentProcessor
+}
+
+enum KycAmlStatusTypeInput {
+  PASSED
+  PENDING
+  FAILED
 }
 
 input UpdateAccountInput {
     id: OID!
-    name: OLabel  
-    accountTransactionsId: PHID
-    chain: String
-    account: EthereumAddress
+    account: String
+    name: String
     budgetPath: String
-    type: AccountType
-    owners: [PHID]
+    accountTransactionsId: PHID
+    chain: [String!]
+    type: AccountTypeInput
+    owners: [String!]
+    KycAmlStatus: KycAmlStatusTypeInput
 }
 
 
 input DeleteAccountInput {
-  id: ID!
+    id: OID!
+}
+
+input UpdateKycStatusInput {
+    id: OID!
+    KycAmlStatus: KycAmlStatusTypeInput!
 }

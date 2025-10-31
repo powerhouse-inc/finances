@@ -3,6 +3,7 @@
  * - change it by adding new tests or modifying the existing ones
  */
 
+import { describe, it, expect, beforeEach } from "vitest";
 import utils, {
   initialGlobalState,
   initialLocalState,
@@ -13,7 +14,9 @@ describe("Account Transactions Document Model", () => {
     const document = utils.createDocument();
 
     expect(document).toBeDefined();
-    expect(document.documentType).toBe("powerhouse/account-transactions");
+    expect(document.header.documentType).toBe(
+      "powerhouse/account-transactions",
+    );
   });
 
   it("should create a new Account Transactions document with a valid initial state", () => {

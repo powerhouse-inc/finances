@@ -1,35 +1,48 @@
 {
-  "name": "powerhouse/finances",
-  "description": "Financial management and tracking tools",
-  "category": "Finance",
-  "publisher": {
-    "name": "Powerhouse",
-    "url": "https://www.powerhouse.inc/"
-  },
-  "documentModels": [
-    {
-      "id": "powerhouse/document-drive",
-      "name": "Document Drive"
+    "name": "Finances",
+    "description": "A place where finances are handled and managed by a SNO",
+    "category": "Finance",
+    "publisher": {
+        "name": "Powerhouse",
+        "url": "https://powerhouse.inc/"
     },
-    {
-      "id": "powerhouse/finances",
-      "name": "Finances Document"
-    }
-  ],
-  "editors": [
-    {
-      "id": "FinancesDriveExplorer",
-      "name": "Finances Drive Explorer",
-      "documentTypes": ["powerhouse/document-drive"]
-    }
-  ],
-  "subgraphs": [],
-  "importScripts": [],
-  "apps": [
-    {
-      "id": "powerhouse/finances-drive-explorer",
-      "name": "Finances App",
-      "driveEditor": "FinancesDriveExplorer"
-    }
-  ]
+    "documentModels": [
+        {
+            "id": "powerhouse/accounts",
+            "name": "Accounts"
+        },
+        {
+            "id": "powerhouse/account-transactions",
+            "name": "AccountTransactions"
+        }
+    ],
+    "editors": [
+        {
+            "id": "accounts-editor",
+            "name": "accounts-editor",
+            "documentTypes": [
+                "powerhouse/accounts"
+            ]
+        },
+        {
+            "id": "account-transactions-editor",
+            "name": "account-transactions-editor",
+            "documentTypes": [
+                "powerhouse/account-transactions"
+            ]
+        }
+        
+    ],
+    "apps": [
+        {
+            "id": "finances-editor",
+            "name": "Finances Drive Explorer",
+            "description": "Explore the finances drive and manage your finances",
+            "documentTypes": [
+                "powerhouse/document-drive"
+            ]
+        }
+    ],
+    "subgraphs": [],
+    "importScripts": []
 }

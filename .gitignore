@@ -1,9 +1,7 @@
-/dist
-/coverage
-/node_modules
-/storybook-static
-
-**/gen
+dist
+coverage
+node_modules
+.eslintcache
 
 .env.local
 .env
