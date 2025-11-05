@@ -7,6 +7,7 @@ import type {
   Budget,
   DeleteBudgetInput,
   DeleteTransactionInput,
+  SetAccountInput,
   TransactionDetails,
   TransactionEntry,
   UpdateBudgetInput,
@@ -74,8 +75,7 @@ export function AddTransactionInputSchema(): z.ZodObject<
       .string()
       .regex(/^0x[a-fA-F0-9]{40}$/, {
         message: "Invalid Ethereum address format",
-      })
-      .nullish(),
+      }),
     datetime: z.string().datetime(),
     id: z.string(),
     token: z.string(),
@@ -104,6 +104,19 @@ export function DeleteTransactionInputSchema(): z.ZodObject<
 > {
   return z.object({
     id: z.string(),
+  });
+}
+
+export function SetAccountInputSchema(): z.ZodObject<
+  Properties<SetAccountInput>
+> {
+  return z.object({
+    address: z
+      .string()
+      .regex(/^0x[a-fA-F0-9]{40}$/, {
+        message: "Invalid Ethereum address format",
+      }),
+    name: z.string().nullish(),
   });
 }
 
@@ -159,8 +172,7 @@ export function UpdateTransactionInputSchema(): z.ZodObject<
       .string()
       .regex(/^0x[a-fA-F0-9]{40}$/, {
         message: "Invalid Ethereum address format",
-      })
-      .nullish(),
+      }),
     datetime: z.string().datetime().nullish(),
     id: z.string(),
     token: z.string().nullish(),

@@ -12,6 +12,8 @@ import {
   type AccountTransactionsDocument,
 } from "../../document-models/account-transactions/index.js";
 import { setName } from "document-model";
+import { alchemyClient } from "../../scripts/alchemy/alchemyClient.js";
+import { generateId } from "document-model/core";
 
 export const getResolvers = (
   subgraph: BaseSubgraph,
@@ -269,6 +271,122 @@ export const getResolvers = (
         }
 
         return true;
+      },
+
+      AccountTransactions_getTransactionsFromAlchemy: async (
+        _: unknown,
+        args: { address: string },
+      ) => {
+        const { address } = args;
+        console.log(`[Resolver] getTransactionsFromAlchemy called with address:`, address);
+
+        try {
+          console.log(`[Resolver] Fetching transactions for address: ${address}`);
+
+          // Use the new AlchemyClient with proper error handling and retry logic
+          const result = await alchemyClient.instance.getAllTransactionsForAddress(address, {
+            fromBlock: "0x0",
+            includeERC20: true,
+            includeExternal: true,
+            includeInternal: false,
+            maxCount: 100
+          });
+
+          const { transactions, summary } = result;
+          console.log(`[Resolver] Successfully fetched ${transactions.length} transactions`);
+
+          // Convert transactions to match the current GraphQL schema
+          const formattedTransactions = transactions.map(tx => ({
+            counterParty: tx.counterParty,
+            amount: `${tx.amount.value} ${tx.amount.unit}`, // Convert to string for Amount_Currency scalar
+            txHash: tx.txHash,
+            token: tx.token,
+            blockNumber: tx.blockNumber,
+            datetime: tx.datetime,
+            accountingPeriod: tx.accountingPeriod
+          }));
+
+          return {
+            success: true,
+            transactions: formattedTransactions,
+            message: `Successfully fetched ${transactions.length} transactions from Alchemy`,
+            transactionsCount: transactions.length
+          };
+
+        } catch (error) {
+          console.error(`[Resolver] Error fetching transactions:`, error);
+          return {
+            success: false,
+            transactions: [],
+            message: `Error fetching transactions: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            transactionsCount: 0
+          };
+        }
+      },
+
+      AccountTransactions_fetchTransactionsFromAlchemy: async (
+        _: unknown,
+        args: { docId: string; address: string },
+      ) => {
+        const { docId, address } = args;
+        console.log(`[Resolver] fetchTransactionsFromAlchemy called with:`, { docId, address });
+
+        const doc = await reactor.getDocument<AccountTransactionsDocument>(docId);
+        if (!doc) {
+          console.error(`[Resolver] Document with id ${docId} not found`);
+          throw new Error(`Document with id ${docId} not found`);
+        }
+
+        console.log(`[Resolver] Document found:`, {
+          id: doc.header.id,
+          name: doc.header.name,
+          documentType: doc.header.documentType
+        });
+
+        try {
+          console.log(`[Resolver] Fetching transactions for address: ${address}`);
+
+          // Use the new AlchemyClient with proper error handling and retry logic
+          const result = await alchemyClient.instance.getAllTransactionsForAddress(address, {
+            fromBlock: "0x0",
+            includeERC20: true,
+            includeExternal: true,
+            includeInternal: false,
+            maxCount: 100
+          });
+
+          const { transactions, summary } = result;
+
+          // Add all transactions to the document via reactor
+          let successfullyAdded = 0;
+          for (const tx of transactions) {
+            const addResult = await reactor.addAction(
+              docId,
+              actions.addTransaction({
+                id: generateId(),
+                ...tx
+              }),
+            );
+
+            if (addResult.status === "SUCCESS") {
+              successfullyAdded++;
+            } else {
+              console.error(`[Resolver] Failed to add transaction ${tx.txHash}:`, addResult.error?.message);
+            }
+          }
+
+          console.log(`[Resolver] Summary: ${summary.outgoing} outgoing, ${summary.incoming} incoming, ${summary.unique} unique, ${successfullyAdded} added to document`);
+
+          return {
+            success: true,
+            transactionsAdded: successfullyAdded,
+            message: `Successfully added ${successfullyAdded} transactions (${summary.outgoing} outgoing, ${summary.incoming} incoming, ${summary.unique} unique)`
+          };
+
+        } catch (error) {
+          console.error("[Resolver] Error fetching transactions from Alchemy:", error);
+          throw new Error(`Failed to fetch transactions: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
       },
     },
   };

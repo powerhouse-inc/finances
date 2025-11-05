@@ -8,6 +8,7 @@ import { z } from "./types.js";
 
 import { reducer as TransactionsReducer } from "../src/reducers/transactions.js";
 import { reducer as BudgetsReducer } from "../src/reducers/budgets.js";
+import { reducer as AccountReducer } from "../src/reducers/account.js";
 
 export const stateReducer: StateReducer<AccountTransactionsPHState> = (
   state,
@@ -76,6 +77,15 @@ export const stateReducer: StateReducer<AccountTransactionsPHState> = (
     case "DELETE_BUDGET":
       z.DeleteBudgetInputSchema().parse(action.input);
       BudgetsReducer.deleteBudgetOperation(
+        (state as any)[action.scope],
+        action as any,
+        dispatch,
+      );
+      break;
+
+    case "SET_ACCOUNT":
+      z.SetAccountInputSchema().parse(action.input);
+      AccountReducer.setAccountOperation(
         (state as any)[action.scope],
         action as any,
         dispatch,

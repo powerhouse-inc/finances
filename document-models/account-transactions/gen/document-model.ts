@@ -27,7 +27,7 @@ export const documentModel: DocumentModelGlobalState = {
               name: "ADD_TRANSACTION",
               reducer: "",
               schema:
-                "input AddTransactionInput {\n    id: ID!\n    counterParty: EthereumAddress\n    amount: Amount_Currency!\n    datetime: DateTime!\n    txHash: String!\n    token: Currency!\n    blockNumber: Int\n    budget: OID\n    accountingPeriod: String!\n}",
+                "input AddTransactionInput {\n    id: ID!\n    counterParty: EthereumAddress!\n    amount: Amount_Currency!\n    datetime: DateTime!\n    txHash: String!\n    token: Currency!\n    blockNumber: Int\n    budget: OID\n    accountingPeriod: String!\n}",
               scope: "global",
               template: "",
             },
@@ -39,7 +39,7 @@ export const documentModel: DocumentModelGlobalState = {
               name: "UPDATE_TRANSACTION",
               reducer: "",
               schema:
-                "input UpdateTransactionInput {\n    id: ID!\n    counterParty: EthereumAddress\n    amount: Amount_Currency\n    datetime: DateTime\n    txHash: String\n    token: Currency\n    blockNumber: Int\n    budget: OID\n    accountingPeriod: String\n}",
+                "input UpdateTransactionInput {\n    id: ID!\n    counterParty: EthereumAddress!\n    amount: Amount_Currency\n    datetime: DateTime\n    txHash: String\n    token: Currency\n    blockNumber: Int\n    budget: OID\n    accountingPeriod: String\n}",
               scope: "global",
               template: "",
             },
@@ -110,12 +110,33 @@ export const documentModel: DocumentModelGlobalState = {
             },
           ],
         },
+        {
+          description: "Account management operations",
+          id: "1c2d3e4f-5a6b-7c8d-9e0f-1a2b3c4d5e6f",
+          name: "account",
+          operations: [
+            {
+              description:
+                "Set the account information including Ethereum address",
+              errors: [],
+              examples: [],
+              id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+              name: "SET_ACCOUNT",
+              reducer:
+                "state.account.account = action.input.address;\nstate.account.name = action.input.name || action.input.address;",
+              schema:
+                "input SetAccountInput {\n    address: EthereumAddress!\n    name: String\n}",
+              scope: "global",
+              template: "",
+            },
+          ],
+        },
       ],
       state: {
         global: {
           examples: [],
           initialValue:
-            '"{\\n  \\"account\\": {\\n    \\"account\\": \\"\\",\\n    \\"name\\": \\"\\",\\n    \\"budgetPath\\": null,\\n    \\"accountTransactionsId\\": null,\\n    \\"chain\\": null,\\n    \\"type\\": null,\\n    \\"owners\\": null,\\n    \\"KycAmlStatus\\": null\\n  },\\n  \\"transactions\\": [],\\n  \\"budgets\\": []\\n}"',
+            '"{\\n  \\"account\\": {\\n    \\"id\\": \\"\\",\\n    \\"account\\": \\"\\",\\n    \\"name\\": \\"\\",\\n    \\"budgetPath\\": null,\\n    \\"accountTransactionsId\\": null,\\n    \\"chain\\": null,\\n    \\"type\\": null,\\n    \\"owners\\": null,\\n    \\"KycAmlStatus\\": null\\n  },\\n  \\"transactions\\": [],\\n  \\"budgets\\": []\\n}"',
           schema:
             "type AccountTransactionsState {\n  account: Account!\n  transactions: [TransactionEntry!]!\n  budgets: [Budget!]!\n}\n\ntype Account {\n    id: OID!\n    account: String!\n    name: String!\n    budgetPath: String\n    accountTransactionsId: PHID\n    chain: [String!]\n    type: String\n    owners: [String!]\n    KycAmlStatus: String\n}\n\ntype TransactionDetails {\n    txHash: String!\n    token: Currency!\n    blockNumber: Int\n}\n\ntype TransactionEntry {\n    id: ID!\n    counterParty: EthereumAddress\n    amount: Amount_Currency!\n    datetime: DateTime!\n    details: TransactionDetails!\n    budget: OID\n    accountingPeriod: String! # Analytics engine period definition\n}\n\ntype Budget {\n    id: OID!\n    name: OLabel\n}",
         },

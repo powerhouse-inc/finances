@@ -15,6 +15,7 @@ import { reducer } from "./reducer.js";
 
 export const initialGlobalState: AccountTransactionsGlobalState = {
   account: {
+    id: "",
     account: "",
     name: "",
     budgetPath: null,

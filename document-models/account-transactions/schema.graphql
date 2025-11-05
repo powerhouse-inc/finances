@@ -60,7 +60,7 @@ type Budget {
 
 input AddTransactionInput {
     id: ID!
-    counterParty: EthereumAddress
+    counterParty: EthereumAddress!
     amount: Amount_Currency!
     datetime: DateTime!
     txHash: String!
@@ -72,7 +72,7 @@ input AddTransactionInput {
 
 input UpdateTransactionInput {
     id: ID!
-    counterParty: EthereumAddress
+    counterParty: EthereumAddress!
     amount: Amount_Currency
     datetime: DateTime
     txHash: String
@@ -105,4 +105,11 @@ input UpdateBudgetInput {
 
 input DeleteBudgetInput {
     id: OID!
+}
+
+# account
+
+input SetAccountInput {
+    address: EthereumAddress!
+    name: String
 }

@@ -55,6 +55,45 @@ export const schema: DocumentNode = gql`
       docId: PHID
       input: AccountTransactions_DeleteBudgetInput
     ): Int
+    AccountTransactions_fetchTransactionsFromAlchemy(
+      docId: PHID!
+      address: EthereumAddress!
+    ): AccountTransactions_AlchemyFetchResult
+    AccountTransactions_getTransactionsFromAlchemy(
+      address: EthereumAddress!
+    ): AccountTransactions_AlchemyTransactionsResult
+  }
+
+  """
+  Response type for Alchemy fetch operation
+  """
+  type AccountTransactions_AlchemyFetchResult {
+    success: Boolean!
+    transactionsAdded: Int!
+    message: String!
+  }
+
+  """
+  Response type for Alchemy get transactions operation
+  """
+  type AccountTransactions_AlchemyTransactionsResult {
+    success: Boolean!
+    transactions: [AccountTransactions_TransactionData!]!
+    message: String!
+    transactionsCount: Int!
+  }
+
+  """
+  Transaction data from Alchemy
+  """
+  type AccountTransactions_TransactionData {
+    counterParty: EthereumAddress!
+    amount: Amount_Currency!
+    txHash: String!
+    token: Currency!
+    blockNumber: Int!
+    datetime: DateTime!
+    accountingPeriod: String!
   }
 
   """

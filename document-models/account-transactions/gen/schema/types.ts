@@ -84,7 +84,7 @@ export type AddTransactionInput = {
   amount: Scalars["Amount_Currency"]["input"];
   blockNumber?: InputMaybe<Scalars["Int"]["input"]>;
   budget?: InputMaybe<Scalars["OID"]["input"]>;
-  counterParty?: InputMaybe<Scalars["EthereumAddress"]["input"]>;
+  counterParty: Scalars["EthereumAddress"]["input"];
   datetime: Scalars["DateTime"]["input"];
   id: Scalars["ID"]["input"];
   token: Scalars["Currency"]["input"];
@@ -102,6 +102,11 @@ export type DeleteBudgetInput = {
 
 export type DeleteTransactionInput = {
   id: Scalars["ID"]["input"];
+};
+
+export type SetAccountInput = {
+  address: Scalars["EthereumAddress"]["input"];
+  name?: InputMaybe<Scalars["String"]["input"]>;
 };
 
 export type TransactionDetails = {
@@ -130,7 +135,7 @@ export type UpdateTransactionInput = {
   amount?: InputMaybe<Scalars["Amount_Currency"]["input"]>;
   blockNumber?: InputMaybe<Scalars["Int"]["input"]>;
   budget?: InputMaybe<Scalars["OID"]["input"]>;
-  counterParty?: InputMaybe<Scalars["EthereumAddress"]["input"]>;
+  counterParty: Scalars["EthereumAddress"]["input"];
   datetime?: InputMaybe<Scalars["DateTime"]["input"]>;
   id: Scalars["ID"]["input"];
   token?: InputMaybe<Scalars["Currency"]["input"]>;

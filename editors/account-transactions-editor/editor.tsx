@@ -1,100 +1,253 @@
+import { useState } from "react";
 import { DocumentToolbar } from "@powerhousedao/design-system";
 import {
   Button,
-  Form,
-  FormLabel,
-  StringField,
 } from "@powerhousedao/document-engineering";
 import {
   setSelectedNode,
   useParentFolderForSelectedNode,
 } from "@powerhousedao/reactor-browser";
-import { useSelectedAccountTransactionsDocument } from "../hooks/useAccountTransactionsDocument.js";
+import { generateId } from "document-model/core";
 import { setName } from "document-model";
-import { actions } from "../../document-models/account-transactions/index.js";
+import { useSelectedAccountTransactionsDocument } from "../hooks/useAccountTransactionsDocument.js";
+import {
+  addTransaction,
+  updateTransaction,
+  deleteTransaction,
+  setAccount,
+} from "../../document-models/account-transactions/gen/creators.js";
+import type {
+  TransactionEntry,
+  AddTransactionInput,
+} from "../../document-models/account-transactions/gen/types.js";
+import { TransactionsTable } from "./components/TransactionsTable.js";
+import { TransactionForm } from "./components/TransactionForm.js";
+import { AccountSection } from "./components/AccountSection.js";
+import { DocumentHeader } from "./components/DocumentHeader.js";
+import { alchemyIntegration } from "./alchemyIntegration.js";
+
+type ViewMode = "list" | "add" | "edit";
 
 export function Editor() {
   const [document, dispatch] = useSelectedAccountTransactionsDocument();
-
-  // Get the parent folder node for the currently selected node
   const parentFolder = useParentFolderForSelectedNode();
+  const [viewMode, setViewMode] = useState<ViewMode>("list");
+  const [editingTransaction, setEditingTransaction] = useState<TransactionEntry | null>(null);
+  const [isLoadingTransactions, setIsLoadingTransactions] = useState(false);
 
-  function handleSetName(values: { name: string }) {
-    if (values.name) {
-      dispatch(setName(values.name));
-    }
-  }
-
-  // Set the selected node to the parent folder node (close the editor)
   function handleClose() {
     setSelectedNode(parentFolder?.id);
   }
 
+  function handleAddTransaction(values: Omit<AddTransactionInput, "id">) {
+    dispatch(
+      addTransaction({
+        id: generateId(),
+        ...values,
+      })
+    );
+    setViewMode("list");
+  }
+
+  function handleUpdateTransaction(values: AddTransactionInput | Omit<AddTransactionInput, "id">) {
+    if ("id" in values) {
+      dispatch(updateTransaction(values));
+    }
+    setViewMode("list");
+    setEditingTransaction(null);
+  }
+
+  function handleDeleteTransaction(id: string) {
+    if (window.confirm("Are you sure you want to delete this transaction?")) {
+      dispatch(deleteTransaction({ id }));
+    }
+  }
+
+  function handleEditClick(transaction: TransactionEntry) {
+    setEditingTransaction(transaction);
+    setViewMode("edit");
+  }
+
+  function handleCancelForm() {
+    setViewMode("list");
+    setEditingTransaction(null);
+  }
+
+  async function handleFetchTransactions() {
+    const account = document.state.global.account;
+    if (!account?.account) {
+      alert("Please set an account address first");
+      return;
+    }
+
+    console.log("[Editor] Fetch transactions called with:", {
+      address: account.account,
+      documentName: document.header.name
+    });
+
+    setIsLoadingTransactions(true);
+    try {
+      // Try the new method first (when reactor is updated)
+      try {
+        const result = await alchemyIntegration.getTransactionsFromAlchemy(account.account);
+
+        if (result.success) {
+          // Add each transaction to the local document
+          let addedCount = 0;
+          for (const txData of result.transactions) {
+            // Handle amount - it might come as string or object
+            let amount;
+            if (typeof txData.amount === 'string') {
+              // Parse amount string back to object format (e.g., "10.5 ETH" -> {value: "10.5", unit: "ETH"})
+              const amountParts = txData.amount.split(' ');
+              amount = {
+                value: amountParts[0] || "0",
+                unit: amountParts[1] || txData.token
+              };
+            } else if (typeof txData.amount === 'object' && txData.amount && 'value' in txData.amount && 'unit' in txData.amount) {
+              // Amount is already in the correct object format
+              amount = txData.amount;
+            } else {
+              // Fallback - create amount from token
+              amount = {
+                value: "0",
+                unit: txData.token
+              };
+            }
+
+            dispatch(addTransaction({
+              id: generateId(),
+              counterParty: txData.counterParty,
+              amount: amount,
+              datetime: txData.datetime,
+              txHash: txData.txHash,
+              token: txData.token,
+              blockNumber: txData.blockNumber,
+              accountingPeriod: txData.accountingPeriod,
+              budget: null // No budget assigned initially
+            }));
+            addedCount++;
+          }
+
+          alert(`Successfully added ${addedCount} transactions from Alchemy`);
+          return;
+        } else {
+          throw new Error(result.message || "Failed to fetch transactions from Alchemy");
+        }
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
+
+        // If the new mutation doesn't exist, provide helpful message
+        if (errorMessage.includes("400") || errorMessage.includes("Cannot query field")) {
+          console.log("[Editor] New mutation not available, reactor needs restart");
+          alert("The transaction fetching feature requires a reactor restart to work. Please restart the reactor (ph vetra) and try again.");
+          return;
+        }
+
+        // Re-throw other errors
+        throw error;
+      }
+    } catch (error) {
+      console.error("Error fetching transactions:", error);
+      alert(`Error fetching transactions: ${error instanceof Error ? error.message : "Unknown error"}`);
+    } finally {
+      setIsLoadingTransactions(false);
+    }
+  }
+
   return (
-    <div>
+    <div className="h-screen flex flex-col bg-gray-50">
       <DocumentToolbar document={document} onClose={handleClose} />
-      <div className="ph-default-styles py-10 text-center">
-        <div className="inline-flex flex-col gap-10 text-start">
-          {/* Edit document name form */}
-          <section className="flex justify-between">
-            <h1 className="text-start">{document.header.name}</h1>
-            <div className="flex flex-col space-y-2">
-              <Form
-                onSubmit={handleSetName}
-                defaultValues={{ name: document.header.name }}
-                className="flex flex-col gap-3 pt-2"
-              >
-                <div className="flex items-end gap-3">
+
+      <div className="flex-1 overflow-auto">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <DocumentHeader
+            document={document}
+            onNameChange={(name) => dispatch(setName(name))}
+          />
+
+          <AccountSection
+            account={document.state.global.account}
+            onSetAccount={(address, name) => {
+              dispatch(setAccount({ address, name }));
+            }}
+          />
+
+          <div className="mt-8">
+            {viewMode === "list" && (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
                   <div>
-                    <FormLabel htmlFor="name">
-                      <b className="mb-1">Change document name</b>
-                    </FormLabel>
-                    <StringField
-                      name="name"
-                      placeholder="Enter document name"
-                      className="mt-1"
-                    />
+                    <h2 className="text-2xl font-semibold text-gray-900">
+                      Transactions
+                    </h2>
+                    <p className="mt-1 text-sm text-gray-600">
+                      Manage account transactions with details and budgets
+                    </p>
                   </div>
-                  <Button type="submit">Edit</Button>
+                  <div className="flex space-x-3">
+                    <Button
+                      onClick={handleFetchTransactions}
+                      disabled={isLoadingTransactions || !document.state.global.account?.account}
+                      className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-6 py-2.5 rounded-lg font-medium shadow-sm transition-colors"
+                    >
+                      {isLoadingTransactions ? "Fetching..." : "Add Transactions"}
+                    </Button>
+                    <Button
+                      onClick={() => setViewMode("add")}
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-medium shadow-sm transition-colors"
+                    >
+                      Add Transaction
+                    </Button>
+                  </div>
                 </div>
-              </Form>
-            </div>
-          </section>
 
-          {/* Document metadata */}
-          <section>
-            <ul className="grid grid-cols-2 gap-x-4 gap-y-1 text-gray-700">
-              <li>
-                <b className="mr-1">Id:</b>
-                {document.header.id}
-              </li>
-              <li>
-                <b className="mr-1">Created:</b>
-                {new Date(document.header.createdAtUtcIso).toLocaleString()}
-              </li>
-              <li>
-                <b className="mr-1">Type:</b>
-                {document.header.documentType}
-              </li>
-              <li>
-                <b className="mr-1">Last Modified:</b>
-                {new Date(
-                  document.header.lastModifiedAtUtcIso,
-                ).toLocaleString()}
-              </li>
-            </ul>
-          </section>
+                <TransactionsTable
+                  transactions={document.state.global.transactions}
+                  budgets={document.state.global.budgets}
+                  onEdit={handleEditClick}
+                  onDelete={handleDeleteTransaction}
+                />
+              </div>
+            )}
 
-          {/* Document state */}
-          <section className="inline-block">
-            <h2 className="mb-4">Document state</h2>
-            <textarea
-              rows={10}
-              readOnly
-              value={JSON.stringify(document.state, null, 2)}
-              className="font-mono"
-            ></textarea>
-          </section>
+            {viewMode === "add" && (
+              <div className="max-w-3xl">
+                <div className="mb-6">
+                  <h2 className="text-2xl font-semibold text-gray-900">
+                    Add New Transaction
+                  </h2>
+                  <p className="mt-1 text-sm text-gray-600">
+                    Fill in the transaction details below
+                  </p>
+                </div>
+                <TransactionForm
+                  budgets={document.state.global.budgets}
+                  onSubmit={handleAddTransaction}
+                  onCancel={handleCancelForm}
+                />
+              </div>
+            )}
+
+            {viewMode === "edit" && editingTransaction && (
+              <div className="max-w-3xl">
+                <div className="mb-6">
+                  <h2 className="text-2xl font-semibold text-gray-900">
+                    Edit Transaction
+                  </h2>
+                  <p className="mt-1 text-sm text-gray-600">
+                    Update the transaction details below
+                  </p>
+                </div>
+                <TransactionForm
+                  transaction={editingTransaction}
+                  budgets={document.state.global.budgets}
+                  onSubmit={handleUpdateTransaction}
+                  onCancel={handleCancelForm}
+                />
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

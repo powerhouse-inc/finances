@@ -14,6 +14,7 @@ import { createDocument } from "./utils.js";
 export function defaultGlobalState(): AccountTransactionsGlobalState {
   return {
     account: {
+      id: "",
       account: "",
       name: "",
       budgetPath: null,

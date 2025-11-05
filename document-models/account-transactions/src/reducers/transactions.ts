@@ -4,16 +4,16 @@ export const reducer: AccountTransactionsTransactionsOperations = {
     addTransactionOperation(state, action) {
         state.transactions.push({
             id: action.input.id,
-            counterParty: action.input.counterParty || "",
-            amount: action.input.amount || 0,
-            datetime: action.input.datetime || new Date().toISOString(),
+            counterParty: action.input.counterParty,
+            amount: action.input.amount,
+            datetime: action.input.datetime,
             details: {
-                txHash: action.input.txHash || "",
-                token: action.input.token || "",
-                blockNumber: action.input.blockNumber || 0,
+                txHash: action.input.txHash,
+                token: action.input.token,
+                blockNumber: action.input.blockNumber || null,
             },
-            budget: action.input.budget || "",
-            accountingPeriod: action.input.accountingPeriod || "",
+            budget: action.input.budget || null,
+            accountingPeriod: action.input.accountingPeriod,
         });
     },
     updateTransactionOperation(state, action) {
@@ -21,11 +21,22 @@ export const reducer: AccountTransactionsTransactionsOperations = {
         if (!transaction) {
             throw new Error(`Transaction with id ${action.input.id} not found`);
         }
-        transaction.counterParty = action.input.counterParty || "";
-        transaction.amount = action.input.amount || { unit: "", value: "" };
-        transaction.datetime = action.input.datetime || new Date().toISOString();
-        transaction.details.txHash = action.input.txHash || "";
-        transaction.details.token = action.input.token || "";
+        transaction.counterParty = action.input.counterParty;
+        if (action.input.amount !== undefined && action.input.amount !== null) {
+            transaction.amount = action.input.amount;
+        }
+        if (action.input.datetime !== undefined && action.input.datetime !== null) {
+            transaction.datetime = action.input.datetime;
+        }
+        if (action.input.txHash !== undefined && action.input.txHash !== null) {
+            transaction.details.txHash = action.input.txHash;
+        }
+        if (action.input.token !== undefined && action.input.token !== null) {
+            transaction.details.token = action.input.token;
+        }
+        if (action.input.blockNumber !== undefined) {
+            transaction.details.blockNumber = action.input.blockNumber;
+        }
     },
     deleteTransactionOperation(state, action) {
         state.transactions = state.transactions.filter((transaction) => transaction.id !== action.input.id);
