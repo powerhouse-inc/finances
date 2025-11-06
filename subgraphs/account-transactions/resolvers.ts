@@ -289,7 +289,7 @@ export const getResolvers = (
             includeERC20: true,
             includeExternal: true,
             includeInternal: false,
-            maxCount: 100
+            maxCount: 1000
           });
 
           const { transactions, summary } = result;
@@ -352,7 +352,7 @@ export const getResolvers = (
             includeERC20: true,
             includeExternal: true,
             includeInternal: false,
-            maxCount: 100
+            maxCount: 1000
           });
 
           const { transactions, summary } = result;
