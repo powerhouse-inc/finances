@@ -9,6 +9,7 @@ import type {
   BlockResponse,
   TransactionEntry
 } from './alchemyTypes.js';
+import { SUPPORTED_TOKEN_CONTRACTS } from './alchemyTypes.js';
 import {
   withRetry,
   isValidEthereumAddress,
@@ -176,7 +177,11 @@ export class AlchemyClient {
       fromAddress: address,
       category: categories,
       excludeZeroValue: true,
-      maxCount: `0x${maxCount.toString(16)}`
+      maxCount: `0x${maxCount.toString(16)}`,
+      // Filter to only supported tokens for ERC20 transactions
+      ...(includeERC20 && {
+        contractAddresses: Object.values(SUPPORTED_TOKEN_CONTRACTS)
+      })
     };
 
     try {
@@ -235,7 +240,11 @@ export class AlchemyClient {
       toAddress: address, // Use toAddress instead of fromAddress
       category: categories,
       excludeZeroValue: true,
-      maxCount: `0x${maxCount.toString(16)}`
+      maxCount: `0x${maxCount.toString(16)}`,
+      // Filter to only supported tokens for ERC20 transactions
+      ...(includeERC20 && {
+        contractAddresses: Object.values(SUPPORTED_TOKEN_CONTRACTS)
+      })
     };
 
     try {
