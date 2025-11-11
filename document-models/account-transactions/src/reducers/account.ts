@@ -2,7 +2,6 @@ import type { AccountTransactionsAccountOperations } from "../../gen/account/ope
 
 export const reducer: AccountTransactionsAccountOperations = {
     setAccountOperation(state, action) {
-        state.account.id = action.input.address;
         state.account.account = action.input.address;
         state.account.name = action.input.name || action.input.address;
     }

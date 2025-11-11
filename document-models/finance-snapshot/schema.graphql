@@ -1,0 +1,163 @@
+scalar Amount_Tokens
+scalar EthereumAddress
+scalar Amount_Percentage
+scalar EmailAddress
+scalar Date
+scalar DateTime
+scalar URL
+scalar Amount_Money
+scalar OLabel
+scalar Currency
+scalar PHID
+scalar OID
+scalar Amount_Fiat
+scalar Amount_Currency
+scalar Amount_Crypto
+scalar Amount
+scalar Upload
+type FinanceSnapshotState {
+  id: OID!
+  name: String!
+  period: String!
+  periodStart: DateTime!
+  periodEnd: DateTime!
+  owner: String!
+  created: DateTime!
+  
+  wallets: [SnapshotWallet!]!
+  transactions: [SnapshotTransaction!]!
+  balances: [WalletBalance!]!
+}
+
+type SnapshotWallet {
+  id: OID!
+  address: EthereumAddress!
+  accountType: AccountType!
+  label: String!
+  accountTransactionsRef: PHID
+}
+
+type SnapshotTransaction {
+  id: ID!
+  block: Int
+  timestamp: DateTime!
+  txHash: String!
+  token: Currency!
+  counterParty: EthereumAddress!
+  amount: Amount_Currency!
+  txLabel: String
+  counterPartyName: String
+  flowType: TransactionFlowType!
+  fromWalletType: AccountType
+  toWalletType: AccountType
+}
+
+type WalletBalance {
+  id: OID!
+  walletAddress: EthereumAddress!
+  accountType: AccountType!
+  token: Currency!
+  startingBalance: Amount_Currency!
+  endingBalance: Amount_Currency!
+  externalInflow: Amount_Currency!
+  externalOutflow: Amount_Currency!
+  internalInflow: Amount_Currency!
+  internalOutflow: Amount_Currency!
+  netExternalChange: Amount_Currency!
+}
+
+enum AccountType {
+  Protocol
+  Auditor
+  Operational
+  PaymentProcessor
+}
+
+enum TransactionFlowType {
+  EXTERNAL_INFLOW
+  EXTERNAL_OUTFLOW
+  INTERNAL_TRANSFER
+}
+
+
+
+# snapshot
+
+input CreateSnapshotInput {
+  id: OID!
+  name: String!
+  period: String!
+  periodStart: DateTime!
+  periodEnd: DateTime!
+  owner: String!
+  created: DateTime!
+}
+
+input AddWalletInput {
+  id: OID!
+  address: EthereumAddress!
+  accountType: AccountTypeInput!
+  label: String!
+  accountTransactionsRef: PHID
+}
+
+enum AccountTypeInput {
+  Protocol
+  Auditor
+  Operational
+  PaymentProcessor
+}
+
+input RemoveWalletInput {
+  walletId: OID!
+}
+
+input UpdatePeriodInput {
+  periodStart: DateTime!
+  periodEnd: DateTime!
+  period: String!
+}
+
+input RefreshSnapshotDataInput {
+  recalculateBalances: Boolean
+  clearExistingData: Boolean
+}
+
+# transactions
+
+input AddTransactionInput {
+  id: ID!
+  block: Int
+  timestamp: DateTime!
+  txHash: String!
+  token: Currency!
+  counterParty: EthereumAddress!
+  amount: Amount_Currency!
+  txLabel: String
+  counterPartyName: String
+  flowType: TransactionFlowTypeInput!
+  fromWalletType: AccountTypeInput
+  toWalletType: AccountTypeInput
+}
+
+enum TransactionFlowTypeInput {
+  EXTERNAL_INFLOW
+  EXTERNAL_OUTFLOW
+  INTERNAL_TRANSFER
+}
+
+# balances
+
+input UpdateWalletBalanceInput {
+  id: OID!
+  walletAddress: EthereumAddress!
+  accountType: AccountTypeInput!
+  token: Currency!
+  startingBalance: Amount_Currency!
+  endingBalance: Amount_Currency!
+  externalInflow: Amount_Currency!
+  externalOutflow: Amount_Currency!
+  internalInflow: Amount_Currency!
+  internalOutflow: Amount_Currency!
+  netExternalChange: Amount_Currency!
+}
