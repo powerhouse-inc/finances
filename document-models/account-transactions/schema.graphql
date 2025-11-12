@@ -46,12 +46,18 @@ type TransactionEntry {
     datetime: DateTime!
     details: TransactionDetails!
     budget: OID
-    accountingPeriod: String! # Analytics engine period definition
+    accountingPeriod: String!
+    direction: TransactionDirection!
 }
 
 type Budget {
     id: OID!
     name: OLabel
+}
+
+enum TransactionDirection {
+    INFLOW
+    OUTFLOW
 }
 
 
@@ -68,11 +74,17 @@ input AddTransactionInput {
     blockNumber: Int
     budget: OID
     accountingPeriod: String!
+    direction: TransactionDirectionInput!
+}
+
+enum TransactionDirectionInput {
+    INFLOW
+    OUTFLOW
 }
 
 input UpdateTransactionInput {
     id: ID!
-    counterParty: EthereumAddress!
+    counterParty: EthereumAddress
     amount: Amount_Currency
     datetime: DateTime
     txHash: String
@@ -80,15 +92,18 @@ input UpdateTransactionInput {
     blockNumber: Int
     budget: OID
     accountingPeriod: String
+    direction: TransactionDirectionInput
 }
 
 input DeleteTransactionInput {
     id: ID!
 }
 
-input UpdateTransactionPeriodInput {
-    id: ID!
-    accountingPeriod: String!
+# account
+
+input SetAccountInput {
+    address: EthereumAddress!
+    name: String
 }
 
 # budgets
@@ -105,11 +120,4 @@ input UpdateBudgetInput {
 
 input DeleteBudgetInput {
     id: OID!
-}
-
-# account
-
-input SetAccountInput {
-    address: EthereumAddress!
-    name: String
 }
