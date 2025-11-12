@@ -94,6 +94,9 @@ export const schema: DocumentNode = gql`
     blockNumber: Int!
     datetime: DateTime!
     accountingPeriod: String!
+    from: EthereumAddress!
+    to: EthereumAddress!
+    direction: String!
   }
 
   """

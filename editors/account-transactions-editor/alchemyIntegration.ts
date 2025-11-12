@@ -19,6 +19,9 @@ export interface AlchemyTransactionData {
   blockNumber: number;
   datetime: string;
   accountingPeriod: string;
+  from: string; // From address for direction calculation
+  to: string;   // To address for direction calculation
+  direction: string; // Transaction direction: INFLOW or OUTFLOW
 }
 
 export interface AlchemyTransactionsResult {
@@ -65,6 +68,9 @@ export class AlchemyIntegrationService {
                   blockNumber
                   datetime
                   accountingPeriod
+                  to
+                  from
+                  direction
                 }
                 message
                 transactionsCount

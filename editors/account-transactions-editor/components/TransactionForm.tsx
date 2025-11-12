@@ -31,6 +31,7 @@ export function TransactionForm({ transaction, budgets, onSubmit, onCancel }: Tr
     blockNumber: transaction.details.blockNumber?.toString() || "",
     budget: transaction.budget || "",
     accountingPeriod: transaction.accountingPeriod,
+    direction: transaction.direction || "OUTFLOW",
   } : {
     counterParty: "",
     amount: "",
@@ -40,6 +41,7 @@ export function TransactionForm({ transaction, budgets, onSubmit, onCancel }: Tr
     blockNumber: "",
     budget: "",
     accountingPeriod: new Date().getFullYear().toString(),
+    direction: "OUTFLOW",
   };
 
   function handleSubmit(values: {
@@ -52,6 +54,7 @@ export function TransactionForm({ transaction, budgets, onSubmit, onCancel }: Tr
     blockNumber?: string;
     budget?: string;
     accountingPeriod: string;
+    direction: string;
   }) {
     const formattedValues = {
       ...(isEditing && { id: values.id }),
@@ -66,6 +69,7 @@ export function TransactionForm({ transaction, budgets, onSubmit, onCancel }: Tr
       blockNumber: values.blockNumber ? parseInt(values.blockNumber) : undefined,
       budget: values.budget || undefined,
       accountingPeriod: values.accountingPeriod,
+      direction: values.direction as "INFLOW" | "OUTFLOW",
     };
 
     onSubmit(formattedValues);
@@ -85,6 +89,11 @@ export function TransactionForm({ transaction, budgets, onSubmit, onCancel }: Tr
     { value: "USDT", label: "USDT" },
     { value: "DAI", label: "DAI" },
     { value: "WETH", label: "WETH" },
+  ];
+
+  const directionOptions = [
+    { value: "INFLOW", label: "Inflow (IN)" },
+    { value: "OUTFLOW", label: "Outflow (OUT)" },
   ];
 
   return (
@@ -141,6 +150,17 @@ export function TransactionForm({ transaction, budgets, onSubmit, onCancel }: Tr
             <SelectField
               name="token"
               options={tokenOptions}
+              required
+            />
+          </div>
+
+          <div>
+            <FormLabel htmlFor="direction" required>
+              Direction
+            </FormLabel>
+            <SelectField
+              name="direction"
+              options={directionOptions}
               required
             />
           </div>

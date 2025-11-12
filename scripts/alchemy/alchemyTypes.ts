@@ -83,4 +83,7 @@ export interface TransactionEntry {
   blockNumber?: number;
   datetime: string;
   accountingPeriod: string;
+  from: string;
+  to: string;
+  direction: 'INFLOW' | 'OUTFLOW';
 }

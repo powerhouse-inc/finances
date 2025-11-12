@@ -99,6 +99,11 @@ input DeleteTransactionInput {
     id: ID!
 }
 
+input UpdateTransactionPeriodInput {
+    id: ID!
+    accountingPeriod: String!
+}
+
 # account
 
 input SetAccountInput {

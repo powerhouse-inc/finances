@@ -86,6 +86,7 @@ export type AddTransactionInput = {
   budget?: InputMaybe<Scalars["OID"]["input"]>;
   counterParty: Scalars["EthereumAddress"]["input"];
   datetime: Scalars["DateTime"]["input"];
+  direction: TransactionDirectionInput | `${TransactionDirectionInput}`;
   id: Scalars["ID"]["input"];
   token: Scalars["Currency"]["input"];
   txHash: Scalars["String"]["input"];
@@ -115,6 +116,10 @@ export type TransactionDetails = {
   txHash: Scalars["String"]["output"];
 };
 
+export type TransactionDirection = "INFLOW" | "OUTFLOW";
+
+export type TransactionDirectionInput = "INFLOW" | "OUTFLOW";
+
 export type TransactionEntry = {
   accountingPeriod: Scalars["String"]["output"];
   amount: Scalars["Amount_Currency"]["output"];
@@ -122,6 +127,7 @@ export type TransactionEntry = {
   counterParty: Maybe<Scalars["EthereumAddress"]["output"]>;
   datetime: Scalars["DateTime"]["output"];
   details: TransactionDetails;
+  direction: TransactionDirection | `${TransactionDirection}`;
   id: Scalars["ID"]["output"];
 };
 
@@ -135,8 +141,11 @@ export type UpdateTransactionInput = {
   amount?: InputMaybe<Scalars["Amount_Currency"]["input"]>;
   blockNumber?: InputMaybe<Scalars["Int"]["input"]>;
   budget?: InputMaybe<Scalars["OID"]["input"]>;
-  counterParty: Scalars["EthereumAddress"]["input"];
+  counterParty?: InputMaybe<Scalars["EthereumAddress"]["input"]>;
   datetime?: InputMaybe<Scalars["DateTime"]["input"]>;
+  direction?: InputMaybe<
+    TransactionDirectionInput | `${TransactionDirectionInput}`
+  >;
   id: Scalars["ID"]["input"];
   token?: InputMaybe<Scalars["Currency"]["input"]>;
   txHash?: InputMaybe<Scalars["String"]["input"]>;

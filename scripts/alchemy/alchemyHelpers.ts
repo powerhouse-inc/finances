@@ -50,9 +50,10 @@ export function isValidEthereumAddress(address: string): boolean {
  */
 export function convertToTransactionEntry(
   transfer: AlchemyAssetTransfer,
-  fromAddress: string,
+  userAddress: string,
   blockTimestamp?: number
 ): TransactionEntry {
+  console.log(`[AlchemyHelpers] convertToTransactionEntry called for tx: ${transfer.hash?.slice(0, 10)}`);
   // Convert value based on decimals for ERC20 tokens
   let value: string;
   if (transfer.category === "erc20" && transfer.rawContract.decimal) {
@@ -65,10 +66,27 @@ export function convertToTransactionEntry(
 
   const token = transfer.asset || "ETH";
 
-  // Determine counterparty (if it's from our address, counterparty is 'to', otherwise 'from')
-  const counterParty = transfer.from.toLowerCase() === fromAddress.toLowerCase()
-    ? transfer.to
-    : transfer.from;
+  // Determine direction and counterparty based on transaction flow
+  const userAddressLower = userAddress.toLowerCase();
+  const fromAddressLower = transfer.from.toLowerCase();
+  const toAddressLower = transfer.to.toLowerCase();
+
+  let direction: 'INFLOW' | 'OUTFLOW';
+  let counterParty: string;
+
+  if (toAddressLower === userAddressLower) {
+    // Money coming INTO user's account
+    direction = 'INFLOW';
+    counterParty = transfer.from; // The sender is the counterparty
+  } else if (fromAddressLower === userAddressLower) {
+    // Money going OUT of user's account
+    direction = 'OUTFLOW';
+    counterParty = transfer.to; // The receiver is the counterparty
+  } else {
+    // This shouldn't happen for user-specific transactions, but fallback to OUTFLOW
+    direction = 'OUTFLOW';
+    counterParty = transfer.from;
+  }
 
   // Use provided timestamp or fallback to current time
   const datetime = blockTimestamp
@@ -77,6 +95,20 @@ export function convertToTransactionEntry(
 
   // Extract year from the actual transaction date for accounting period
   const transactionDate = new Date(blockTimestamp || Date.now());
+
+  // Debug logging
+  console.log(`[AlchemyHelpers] Transaction ${transfer.hash.slice(0, 10)}... - Direction: ${direction}, From: ${transfer.from.slice(0, 8)}..., To: ${transfer.to.slice(0, 8)}..., User: ${userAddress.slice(0, 8)}...`);
+
+  // Validation - throw error if critical fields are undefined
+  if (!direction) {
+    throw new Error(`Direction is undefined for transaction ${transfer.hash}. From: ${transfer.from}, To: ${transfer.to}, User: ${userAddress}`);
+  }
+  if (!transfer.from) {
+    throw new Error(`From address is undefined for transaction ${transfer.hash}`);
+  }
+  if (!transfer.to) {
+    throw new Error(`To address is undefined for transaction ${transfer.hash}`);
+  }
 
   return {
     counterParty,
@@ -88,7 +120,10 @@ export function convertToTransactionEntry(
     token: token,
     blockNumber: parseInt(transfer.blockNum, 16),
     datetime: datetime,
-    accountingPeriod: transactionDate.getFullYear().toString()
+    accountingPeriod: transactionDate.getFullYear().toString(),
+    from: transfer.from,
+    to: transfer.to,
+    direction
   };
 }
 

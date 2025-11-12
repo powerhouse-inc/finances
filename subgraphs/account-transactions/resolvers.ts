@@ -279,6 +279,7 @@ export const getResolvers = (
       ) => {
         const { address } = args;
         console.log(`[Resolver] getTransactionsFromAlchemy called with address:`, address);
+        console.log(`[Resolver] About to call alchemyClient.instance.getAllTransactionsForAddress`);
 
         try {
           console.log(`[Resolver] Fetching transactions for address: ${address}`);
@@ -295,6 +296,18 @@ export const getResolvers = (
           const { transactions, summary } = result;
           console.log(`[Resolver] Successfully fetched ${transactions.length} transactions`);
 
+          // Debug: Log what AlchemyClient is actually returning
+          console.log(`[Resolver] Sample transactions from AlchemyClient (first 3):`, transactions.slice(0, 3).map(tx => ({
+            hash: tx.txHash?.slice(0, 10),
+            direction: tx.direction,
+            from: tx.from?.slice(0, 8),
+            to: tx.to?.slice(0, 8),
+            hasDirection: 'direction' in tx,
+            hasFrom: 'from' in tx,
+            hasTo: 'to' in tx,
+            allFields: Object.keys(tx)
+          })));
+
           // Convert transactions to match the current GraphQL schema
           const formattedTransactions = transactions.map(tx => ({
             counterParty: tx.counterParty,
@@ -303,15 +316,23 @@ export const getResolvers = (
             token: tx.token,
             blockNumber: tx.blockNumber,
             datetime: tx.datetime,
-            accountingPeriod: tx.accountingPeriod
+            accountingPeriod: tx.accountingPeriod,
+            from: tx.from,
+            to: tx.to,
+            direction: tx.direction
           }));
 
-          return {
+          const response = {
             success: true,
             transactions: formattedTransactions,
             message: `Successfully fetched ${transactions.length} transactions from Alchemy`,
             transactionsCount: transactions.length
           };
+
+          // Debug: Log what we're actually returning to GraphQL
+          console.log(`[Resolver] Final GraphQL response (first transaction):`, JSON.stringify(response.transactions[0], null, 2));
+
+          return response;
 
         } catch (error) {
           console.error(`[Resolver] Error fetching transactions:`, error);

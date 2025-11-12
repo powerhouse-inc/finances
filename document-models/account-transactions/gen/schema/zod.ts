@@ -9,6 +9,8 @@ import type {
   DeleteTransactionInput,
   SetAccountInput,
   TransactionDetails,
+  TransactionDirection,
+  TransactionDirectionInput,
   TransactionEntry,
   UpdateBudgetInput,
   UpdateTransactionInput,
@@ -27,6 +29,10 @@ export const isDefinedNonNullAny = (v: any): v is definedNonNullAny =>
 export const definedNonNullAnySchema = z
   .any()
   .refine((v) => isDefinedNonNullAny(v));
+
+export const TransactionDirectionSchema = z.enum(["INFLOW", "OUTFLOW"]);
+
+export const TransactionDirectionInputSchema = z.enum(["INFLOW", "OUTFLOW"]);
 
 export function AccountSchema(): z.ZodObject<Properties<Account>> {
   return z.object({
@@ -77,6 +83,7 @@ export function AddTransactionInputSchema(): z.ZodObject<
         message: "Invalid Ethereum address format",
       }),
     datetime: z.string().datetime(),
+    direction: z.lazy(() => TransactionDirectionInputSchema),
     id: z.string(),
     token: z.string(),
     txHash: z.string(),
@@ -147,6 +154,7 @@ export function TransactionEntrySchema(): z.ZodObject<
       .nullable(),
     datetime: z.string().datetime(),
     details: TransactionDetailsSchema(),
+    direction: TransactionDirectionSchema,
     id: z.string(),
   });
 }
@@ -172,8 +180,10 @@ export function UpdateTransactionInputSchema(): z.ZodObject<
       .string()
       .regex(/^0x[a-fA-F0-9]{40}$/, {
         message: "Invalid Ethereum address format",
-      }),
+      })
+      .nullish(),
     datetime: z.string().datetime().nullish(),
+    direction: z.lazy(() => TransactionDirectionInputSchema.nullish()),
     id: z.string(),
     token: z.string().nullish(),
     txHash: z.string().nullish(),

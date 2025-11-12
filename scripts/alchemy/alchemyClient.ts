@@ -44,6 +44,11 @@ export class AlchemyClient {
           params: [params]
         };
 
+        console.log(`[AlchemyClient] Sending request to Alchemy:`, {
+          method: data.method,
+          params: data.params[0]
+        });
+
         const response = await fetch(this.baseURL, {
           method: 'POST',
           headers: {
@@ -60,6 +65,20 @@ export class AlchemyClient {
 
         if ('error' in result) {
           throw new Error(`Alchemy RPC error: ${result.error.message}`);
+        }
+
+        // Debug: Log first transfer to see what fields Alchemy actually returns
+        if (!('error' in result) && result.result.transfers.length > 0) {
+          const firstTransfer = result.result.transfers[0];
+          console.log(`[AlchemyClient] Raw Alchemy transfer data:`, {
+            hash: firstTransfer.hash?.slice(0, 10),
+            from: firstTransfer.from,
+            to: firstTransfer.to,
+            blockNum: firstTransfer.blockNum,
+            asset: firstTransfer.asset,
+            category: firstTransfer.category,
+            allFields: Object.keys(firstTransfer)
+          });
         }
 
         return result;

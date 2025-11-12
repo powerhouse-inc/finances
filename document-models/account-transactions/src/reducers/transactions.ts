@@ -14,6 +14,7 @@ export const reducer: AccountTransactionsTransactionsOperations = {
             },
             budget: action.input.budget || null,
             accountingPeriod: action.input.accountingPeriod,
+            direction: action.input.direction,
         });
     },
     updateTransactionOperation(state, action) {
@@ -21,7 +22,9 @@ export const reducer: AccountTransactionsTransactionsOperations = {
         if (!transaction) {
             throw new Error(`Transaction with id ${action.input.id} not found`);
         }
-        transaction.counterParty = action.input.counterParty;
+        if (action.input.counterParty !== undefined && action.input.counterParty !== null) {
+            transaction.counterParty = action.input.counterParty;
+        }
         if (action.input.amount !== undefined && action.input.amount !== null) {
             transaction.amount = action.input.amount;
         }
@@ -36,6 +39,9 @@ export const reducer: AccountTransactionsTransactionsOperations = {
         }
         if (action.input.blockNumber !== undefined) {
             transaction.details.blockNumber = action.input.blockNumber;
+        }
+        if (action.input.direction !== undefined && action.input.direction !== null) {
+            transaction.direction = action.input.direction;
         }
     },
     deleteTransactionOperation(state, action) {

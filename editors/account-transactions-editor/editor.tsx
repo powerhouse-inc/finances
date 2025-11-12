@@ -92,9 +92,33 @@ export function Editor() {
         const result = await alchemyIntegration.getTransactionsFromAlchemy(account.account);
 
         if (result.success) {
+          console.log(`[Editor] Successfully fetched ${result.transactions.length} transactions from Alchemy`);
+          console.log("TRANSACTIONS",result.transactions)
+          console.log(`[Editor] Raw transactions from Alchemy (first 3):`, result.transactions.slice(0, 3).map(tx => ({
+            hash: tx.txHash?.slice(0, 10),
+            direction: tx.direction,
+            from: tx.from?.slice(0, 8),
+            to: tx.to?.slice(0, 8),
+            counterParty: tx.counterParty?.slice(0, 8)
+          })));
+
           // Add each transaction to the local document
           let addedCount = 0;
           for (const txData of result.transactions) {
+            // Validation - ensure we have required fields before adding
+            if (!txData.direction) {
+              console.error(`[Editor] Skipping transaction with undefined direction:`, txData);
+              continue;
+            }
+            if (!txData.from || !txData.to) {
+              console.error(`[Editor] Skipping transaction with undefined from/to:`, {
+                hash: txData.txHash,
+                from: txData.from,
+                to: txData.to,
+                direction: txData.direction
+              });
+              continue;
+            }
             // Handle amount - it might come as string or object
             let amount;
             if (typeof txData.amount === 'string') {
@@ -124,10 +148,15 @@ export function Editor() {
               token: txData.token,
               blockNumber: txData.blockNumber,
               accountingPeriod: txData.accountingPeriod,
+              direction: (txData.direction as "INFLOW" | "OUTFLOW") || "OUTFLOW", // Use direction from Alchemy data or default to OUTFLOW
               budget: null // No budget assigned initially
             }));
             addedCount++;
           }
+
+          // Debug: Log the full document state to check direction values
+          console.log(`[Editor] Full document state after adding transactions:`, JSON.stringify(document.state.global.transactions, null, 2));
+          console.log(`[Editor] Direction values found:`, document.state.global.transactions.map(tx => `${tx.id.slice(0, 8)}... -> ${tx.direction}`));
 
           alert(`Successfully added ${addedCount} transactions from Alchemy`);
           return;
