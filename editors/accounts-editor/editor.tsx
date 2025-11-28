@@ -4,6 +4,7 @@ import { Button } from "@powerhousedao/document-engineering";
 import {
   setSelectedNode,
   useParentFolderForSelectedNode,
+  useSelectedDrive,
 } from "@powerhousedao/reactor-browser";
 import { generateId } from "document-model/core";
 import { setName } from "document-model";
@@ -19,19 +20,26 @@ import type {
   AccountTypeInput,
   KycAmlStatusTypeInput,
 } from "../../document-models/accounts/gen/schema/types.js";
-import { AccountCard } from "./components/AccountCard.js";
 import { AccountForm } from "./components/AccountForm.js";
 import { DocumentHeader } from "./components/DocumentHeader.js";
+import { AccountsList } from "./components/AccountsList.js";
+import { AccountsFilter } from "./components/AccountsFilter.js";
+import { accountTransactionsService } from "./services/accountTransactionsService.js";
 
 type ViewMode = "list" | "add" | "edit";
+type ViewModeDisplay = "grid" | "table";
 
 export function Editor() {
   const [document, dispatch] = useSelectedAccountsDocument();
   const parentFolder = useParentFolderForSelectedNode();
+  const [selectedDrive] = useSelectedDrive();
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [editingAccount, setEditingAccount] = useState<AccountEntry | null>(
     null,
   );
+  const [displayMode, setDisplayMode] = useState<ViewModeDisplay>("grid");
+  const [filteredAccounts, setFilteredAccounts] = useState<AccountEntry[]>([]);
+  const [creatingTransactionsFor, setCreatingTransactionsFor] = useState<string | null>(null);
 
   function handleClose() {
     setSelectedNode(parentFolder?.id);
@@ -115,6 +123,30 @@ export function Editor() {
     setEditingAccount(null);
   }
 
+  async function handleCreateTransactions(account: AccountEntry) {
+    setCreatingTransactionsFor(account.id);
+    try {
+      const driveId = selectedDrive?.header?.id;
+      const result = await accountTransactionsService.createAccountTransactionsDocument(
+        account,
+        driveId
+      );
+
+      if (result.success) {
+        alert(`Success! Created document and fetched ${result.transactionsAdded} transactions`);
+      } else {
+        alert(`Error: ${result.message}`);
+      }
+    } catch (error) {
+      alert(`Error: ${error instanceof Error ? error.message : 'Unknown error occurred'}`);
+    } finally {
+      setCreatingTransactionsFor(null);
+    }
+  }
+
+  const accounts = document.state.global.accounts;
+  const displayAccounts = filteredAccounts.length > 0 || accounts.length === 0 ? filteredAccounts : accounts;
+
   return (
     <div className="h-screen flex flex-col bg-gray-50">
       <DocumentToolbar document={document} onClose={handleClose} />
@@ -146,7 +178,7 @@ export function Editor() {
                   </Button>
                 </div>
 
-                {document.state.global.accounts.length === 0 ? (
+                {accounts.length === 0 ? (
                   <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
                     <svg
                       className="mx-auto h-12 w-12 text-gray-400"
@@ -174,17 +206,25 @@ export function Editor() {
                       Add Account
                     </Button>
                   </div>
-                ) : (
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {document.state.global.accounts.map((account) => (
-                      <AccountCard
-                        key={account.id}
-                        account={account}
-                        onEdit={handleEditClick}
-                        onDelete={handleDeleteAccount}
-                        onUpdateKycStatus={handleUpdateKycStatus}
-                      />
-                    ))}
+) : (
+                  <div className="space-y-6">
+                    {/* Filter Component */}
+                    <AccountsFilter
+                      accounts={accounts}
+                      onFilteredAccountsChange={setFilteredAccounts}
+                    />
+
+                    {/* Accounts List */}
+                    <AccountsList
+                      accounts={displayAccounts}
+                      viewMode={displayMode}
+                      onViewModeChange={setDisplayMode}
+                      onEdit={handleEditClick}
+                      onDelete={handleDeleteAccount}
+                      onUpdateKycStatus={handleUpdateKycStatus}
+                      onCreateTransactions={handleCreateTransactions}
+                      creatingTransactionsFor={creatingTransactionsFor || undefined}
+                    />
                   </div>
                 )}
               </div>
