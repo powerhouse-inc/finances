@@ -109,6 +109,35 @@ export const getResolvers = (
         return document.header.id;
       },
 
+      AccountTransactions_setAccount: async (
+        _: unknown,
+        args: { docId: string; input: { address: string; name?: string } },
+      ) => {
+        console.log('[Resolver] AccountTransactions_setAccount called with:', args);
+        const { docId, input } = args;
+        const doc = await reactor.getDocument<AccountTransactionsDocument>(docId);
+        if (!doc) {
+          console.error('[Resolver] Document not found:', docId);
+          throw new Error("Document not found");
+        }
+
+        console.log('[Resolver] Document found, setting account with action:', input);
+        const result = await reactor.addAction(
+          docId,
+          actions.setAccount(input),
+        );
+
+        console.log('[Resolver] setAccount action result:', result);
+
+        if (result.status !== "SUCCESS") {
+          console.error('[Resolver] setAccount failed:', result.error);
+          throw new Error(result.error?.message ?? "Failed to set account");
+        }
+
+        console.log('[Resolver] Account successfully set!');
+        return true;
+      },
+
       AccountTransactions_addTransaction: async (
         _: unknown,
         args: { docId: string; input: AddTransactionInput },

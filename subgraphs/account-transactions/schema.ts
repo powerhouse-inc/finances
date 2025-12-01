@@ -19,6 +19,10 @@ export const schema: DocumentNode = gql`
   """
   type Mutation {
     AccountTransactions_createDocument(name: String!, driveId: String): String
+    AccountTransactions_setAccount(
+      docId: PHID!
+      input: AccountTransactions_SetAccountInput!
+    ): Boolean
 
     AccountTransactions_addTransaction(
       driveId: String
@@ -145,5 +149,13 @@ export const schema: DocumentNode = gql`
   }
   input AccountTransactions_DeleteBudgetInput {
     id: OID!
+  }
+
+  """
+  Input for setting account information
+  """
+  input AccountTransactions_SetAccountInput {
+    address: EthereumAddress!
+    name: String
   }
 `;

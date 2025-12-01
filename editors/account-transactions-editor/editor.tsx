@@ -102,9 +102,24 @@ export function Editor() {
             counterParty: tx.counterParty?.slice(0, 8)
           })));
 
-          // Add each transaction to the local document
+          // Get existing transaction hashes for deduplication
+          const existingTxHashes = new Set(
+            document.state.global.transactions.map(tx => tx.txHash)
+          );
+          console.log(`[Editor] Found ${existingTxHashes.size} existing transactions in document`);
+
+          // Filter out transactions that already exist
+          const newTransactions = result.transactions.filter(tx => !existingTxHashes.has(tx.txHash));
+          console.log(`[Editor] Found ${newTransactions.length} new transactions (${result.transactions.length - newTransactions.length} duplicates skipped)`);
+
+          if (newTransactions.length === 0) {
+            alert("No new transactions found. All transactions from Alchemy are already in the document.");
+            return;
+          }
+
+          // Add only new transactions to the local document
           let addedCount = 0;
-          for (const txData of result.transactions) {
+          for (const txData of newTransactions) {
             // Validation - ensure we have required fields before adding
             if (!txData.direction) {
               console.error(`[Editor] Skipping transaction with undefined direction:`, txData);
@@ -158,7 +173,12 @@ export function Editor() {
           console.log(`[Editor] Full document state after adding transactions:`, JSON.stringify(document.state.global.transactions, null, 2));
           console.log(`[Editor] Direction values found:`, document.state.global.transactions.map(tx => `${tx.id.slice(0, 8)}... -> ${tx.direction}`));
 
-          alert(`Successfully added ${addedCount} transactions from Alchemy`);
+          const skippedCount = result.transactions.length - addedCount;
+          const message = skippedCount > 0
+            ? `Successfully added ${addedCount} new transactions from Alchemy (${skippedCount} duplicates skipped)`
+            : `Successfully added ${addedCount} new transactions from Alchemy`;
+
+          alert(message);
           return;
         } else {
           throw new Error(result.message || "Failed to fetch transactions from Alchemy");
@@ -208,10 +228,10 @@ export function Editor() {
                 <div className="flex items-center justify-between">
                   <div>
                     <h2 className="text-2xl font-semibold text-gray-900">
-                      Transactions
+                      Transactions ({document.state.global.transactions.length})
                     </h2>
                     <p className="mt-1 text-sm text-gray-600">
-                      Manage account transactions with details and budgets
+                      Manage account transactions with details and budgets. Only new transactions will be added when fetching.
                     </p>
                   </div>
                   <div className="flex space-x-3">
@@ -220,7 +240,7 @@ export function Editor() {
                       disabled={isLoadingTransactions || !document.state.global.account?.account}
                       className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-6 py-2.5 rounded-lg font-medium shadow-sm transition-colors"
                     >
-                      {isLoadingTransactions ? "Fetching..." : "Add Transactions"}
+                      {isLoadingTransactions ? "Fetching..." : "Fetch New Transactions"}
                     </Button>
                     <Button
                       onClick={() => setViewMode("add")}

@@ -44,7 +44,8 @@ export class AccountTransactionsService {
         throw new Error(createResult.message || "Failed to create document");
       }
 
-      // Step 2: Set the account information in the document (skipped for now - setAccount mutation not implemented)
+      // Step 2: Set the account information in the document
+      await this.setAccountInfo(createResult.documentId, account);
 
       // Step 3: Fetch and add transactions from Alchemy
       const transactionsResult = await this.fetchTransactionsFromAlchemy(
@@ -118,16 +119,14 @@ export class AccountTransactionsService {
 
   /**
    * Set account information in the Account Transactions document
-   * Note: This will be skipped for now as the setAccount GraphQL mutation may not be implemented
    */
   private async setAccountInfo(documentId: string, account: AccountEntry): Promise<void> {
+    console.log('[AccountTransactionsService] Setting account info:', {
+      documentId,
+      address: account.account,
+      name: account.name
+    });
 
-    // TODO: Implement setAccount GraphQL mutation in the subgraph if needed
-    // The account information might be set automatically when creating the document
-    // or during the fetchTransactionsFromAlchemy process
-
-    // Commented out for now:
-    /*
     const response = await fetch(this.graphqlEndpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -147,18 +146,37 @@ export class AccountTransactionsService {
       })
     });
 
+    console.log('[AccountTransactionsService] SetAccount response status:', response.status);
+
     if (!response.ok) {
-      throw new Error(`Failed to set account info: ${response.status} - ${response.statusText}`);
+      const errorText = await response.text();
+      console.error('[AccountTransactionsService] SetAccount failed:', {
+        status: response.status,
+        statusText: response.statusText,
+        errorText
+      });
+      throw new Error(`Failed to set account info: ${response.status} - ${response.statusText} - ${errorText}`);
     }
 
     const result = await response.json() as {
       errors?: Array<{message: string}>;
+      data?: {
+        AccountTransactions_setAccount?: boolean;
+      };
     };
 
+    console.log('[AccountTransactionsService] SetAccount result:', result);
+
     if (result.errors) {
+      console.error('[AccountTransactionsService] SetAccount GraphQL errors:', result.errors);
       throw new Error(result.errors[0]?.message || 'Failed to set account info');
     }
-    */
+
+    if (result.data?.AccountTransactions_setAccount) {
+      console.log('[AccountTransactionsService] Account successfully set!');
+    } else {
+      console.warn('[AccountTransactionsService] SetAccount returned false or undefined');
+    }
   }
 
   /**
@@ -219,12 +237,10 @@ export class AccountTransactionsService {
     accountId: string,
     transactionsDocumentId: string
   ): Promise<void> {
-    // This would need to be implemented based on your accounts subgraph
-    // For now, we'll just log it as the accounts document would need to be updated
-
     // TODO: Implement account update via GraphQL
     // This would require the accounts subgraph to have an updateAccount mutation
     // that can set the accountTransactionsId field
+    console.log(`[Service] Account ${accountId} linked to transactions document ${transactionsDocumentId}`);
   }
 
   /**
