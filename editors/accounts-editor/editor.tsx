@@ -127,8 +127,10 @@ export function Editor() {
     setCreatingTransactionsFor(account.id);
     try {
       const driveId = selectedDrive?.header?.id;
+      const accountsDocumentId = document.header.id;
       const result = await accountTransactionsService.createAccountTransactionsDocument(
         account,
+        accountsDocumentId,
         driveId
       );
 

@@ -19,14 +19,15 @@ export const reducer: AccountsAccountsOperations = {
         if (!account) {
             throw new Error(`Account with id ${action.input.id} not found`);
         }
-        account.account = action.input.account || "";
-        account.name = action.input.name || "";
-        account.budgetPath = action.input.budgetPath || "";
-        account.accountTransactionsId = action.input.accountTransactionsId || "";
-        account.chain = action.input.chain || [];
-        account.type = action.input.type || "Protocol";
-        account.owners = action.input.owners || [];
-        account.KycAmlStatus = action.input.KycAmlStatus || "PENDING";
+        // Only update fields that are provided (not undefined/null)
+        if (action.input.account) account.account = action.input.account;
+        if (action.input.name) account.name = action.input.name;
+        if (action.input.budgetPath) account.budgetPath = action.input.budgetPath;
+        if (action.input.accountTransactionsId) account.accountTransactionsId = action.input.accountTransactionsId;
+        if (action.input.chain) account.chain = action.input.chain;
+        if (action.input.type) account.type = action.input.type;
+        if (action.input.owners) account.owners = action.input.owners;
+        if (action.input.KycAmlStatus) account.KycAmlStatus = action.input.KycAmlStatus;
     },
     deleteAccountOperation(state, action) {
         state.accounts = state.accounts.filter((account) => account.id !== action.input.id);

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Button } from "@powerhousedao/document-engineering";
+import { setSelectedNode } from "@powerhousedao/reactor-browser";
 import type {
   AccountEntry,
   KycAmlStatusTypeInput,
@@ -202,43 +203,55 @@ export function AccountCard({
               </div>
             </div>
 
-            {/* Create Transactions Button */}
+            {/* Create Transactions Button or Link */}
             {onCreateTransactions && (
               <div className="flex flex-col gap-2">
-                {account.accountTransactionsId && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                    <div className="flex items-center gap-2">
-                      <svg className="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                {account.accountTransactionsId ? (
+                  // Show link to transactions document if it exists
+                  <button
+                    onClick={() => setSelectedNode(account.accountTransactionsId!)}
+                    className="w-full bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg p-3 transition-colors text-left"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <div>
+                          <span className="text-sm font-medium text-blue-900">View Transactions Document</span>
+                          <p className="text-xs text-blue-600 font-mono mt-0.5">{account.accountTransactionsId}</p>
+                        </div>
+                      </div>
+                      <svg className="w-5 h-5 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                       </svg>
-                      <span className="text-sm font-medium text-blue-800">Transactions document created</span>
                     </div>
-                    <p className="text-xs text-blue-600 mt-1">ID: {account.accountTransactionsId}</p>
-                  </div>
+                  </button>
+                ) : (
+                  // Show create button if no transactions document exists
+                  <Button
+                    onClick={() => onCreateTransactions(account)}
+                    disabled={isCreatingTransactions}
+                    className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-4 py-2.5 rounded-lg font-medium shadow-sm transition-colors flex items-center justify-center gap-2"
+                  >
+                    {isCreatingTransactions ? (
+                      <>
+                        <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Creating...
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                        Create Transactions
+                      </>
+                    )}
+                  </Button>
                 )}
-
-                <Button
-                  onClick={() => onCreateTransactions(account)}
-                  disabled={isCreatingTransactions}
-                  className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-4 py-2.5 rounded-lg font-medium shadow-sm transition-colors flex items-center justify-center gap-2"
-                >
-                  {isCreatingTransactions ? (
-                    <>
-                      <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Creating...
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                      </svg>
-                      {account.accountTransactionsId ? 'Refresh Transactions' : 'Create Transactions'}
-                    </>
-                  )}
-                </Button>
               </div>
             )}
           </div>

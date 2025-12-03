@@ -33,6 +33,7 @@ export class AccountTransactionsService {
    */
   async createAccountTransactionsDocument(
     account: AccountEntry,
+    accountsDocumentId: string,
     driveId?: string
   ): Promise<CreateAccountTransactionsResult> {
     try {
@@ -55,7 +56,11 @@ export class AccountTransactionsService {
 
       // Step 4: Update the account with the transaction document ID
       if (transactionsResult.success) {
-        await this.updateAccountTransactionsId(account.id, createResult.documentId);
+        await this.updateAccountTransactionsId(
+          accountsDocumentId,
+          account.id,
+          createResult.documentId
+        );
       }
 
       return {
@@ -234,13 +239,58 @@ export class AccountTransactionsService {
    * Update the account with the Account Transactions document ID
    */
   private async updateAccountTransactionsId(
+    accountsDocumentId: string,
     accountId: string,
     transactionsDocumentId: string
   ): Promise<void> {
-    // TODO: Implement account update via GraphQL
-    // This would require the accounts subgraph to have an updateAccount mutation
-    // that can set the accountTransactionsId field
-    console.log(`[Service] Account ${accountId} linked to transactions document ${transactionsDocumentId}`);
+    console.log('[AccountTransactionsService] Updating account with transactions ID:', {
+      accountsDocumentId,
+      accountId,
+      transactionsDocumentId
+    });
+
+    const response = await fetch(this.graphqlEndpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        query: `
+          mutation UpdateAccountTransactionsId($docId: PHID!, $input: Accounts_UpdateAccountInput!) {
+            Accounts_updateAccount(docId: $docId, input: $input)
+          }
+        `,
+        variables: {
+          docId: accountsDocumentId,
+          input: {
+            id: accountId,
+            accountTransactionsId: transactionsDocumentId
+          }
+        }
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[AccountTransactionsService] Failed to update account:', {
+        status: response.status,
+        statusText: response.statusText,
+        errorText
+      });
+      throw new Error(`Failed to update account: ${response.status} - ${response.statusText}`);
+    }
+
+    const result = await response.json() as {
+      errors?: Array<{message: string}>;
+      data?: {
+        Accounts_updateAccount?: number;
+      };
+    };
+
+    if (result.errors) {
+      console.error('[AccountTransactionsService] GraphQL errors:', result.errors);
+      throw new Error(result.errors[0]?.message || 'Failed to update account');
+    }
+
+    console.log('[AccountTransactionsService] Account successfully updated with transactions ID');
   }
 
   /**

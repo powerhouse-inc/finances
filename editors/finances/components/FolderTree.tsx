@@ -4,6 +4,7 @@ import {
   type SidebarNode,
 } from "@powerhousedao/document-engineering";
 import {
+  isFileNodeKind,
   setSelectedNode,
   useNodesInSelectedDrive,
   useSelectedDrive,
@@ -45,12 +46,52 @@ function transformNodesToSidebarNodes(
   nodes: Node[],
   driveName: string,
 ): SidebarNode[] {
+  // Group nodes by document type
+  const accountsNodes = nodes.filter(n =>
+    isFileNodeKind(n) && n.documentType === 'powerhouse/accounts'
+  );
+  const transactionsNodes = nodes.filter(n =>
+    isFileNodeKind(n) && n.documentType === 'powerhouse/account-transactions'
+  );
+  const otherNodes = nodes.filter(n =>
+    !isFileNodeKind(n) || !n.documentType?.includes('account')
+  );
+
+  const children: SidebarNode[] = [];
+
+  // === ACCOUNTS SECTION ===
+  if (accountsNodes.length > 0) {
+    children.push({
+      id: "accounts-category",
+      title: "Accounts",
+      icon: "FolderClose" as const,
+      expandedIcon: "FolderOpen" as const,
+      children: buildSidebarNodes(accountsNodes, null),
+    });
+  }
+
+  // === TRANSACTIONS SECTION ===
+  if (transactionsNodes.length > 0) {
+    children.push({
+      id: "transactions-category",
+      title: "Transactions",
+      icon: "FolderClose" as const,
+      expandedIcon: "FolderOpen" as const,
+      children: buildSidebarNodes(transactionsNodes, null),
+    });
+  }
+
+  // === OTHER DOCUMENTS ===
+  if (otherNodes.length > 0) {
+    children.push(...buildSidebarNodes(otherNodes, null));
+  }
+
   return [
     {
       id: "root",
       title: driveName,
       icon: "Drive" as const,
-      children: buildSidebarNodes(nodes, null),
+      children,
     },
   ];
 }
