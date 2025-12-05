@@ -20,6 +20,14 @@ export const schema: DocumentNode = gql`
   type Mutation {
     FinanceSnapshot_createDocument(name: String!, driveId: String): String
 
+    FinanceSnapshot_generateSnapshotFromAccounts(
+      docId: PHID!
+      accountsDocumentId: PHID!
+      owner: String!
+      periodStart: DateTime!
+      periodEnd: DateTime!
+    ): FinanceSnapshot_GenerateSnapshotResult!
+
     FinanceSnapshot_createSnapshot(
       driveId: String
       docId: PHID
@@ -135,5 +143,17 @@ export const schema: DocumentNode = gql`
     internalInflow: Amount_Currency!
     internalOutflow: Amount_Currency!
     netExternalChange: Amount_Currency!
+  }
+
+  """
+  Result type for generateSnapshotFromAccounts
+  """
+  type FinanceSnapshot_GenerateSnapshotResult {
+    success: Boolean!
+    message: String!
+    snapshotId: OID
+    accountsProcessed: Int!
+    transactionsImported: Int!
+    balancesCalculated: Int!
   }
 `;

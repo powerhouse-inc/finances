@@ -1,13 +1,10 @@
 import { useState } from "react";
 import { DocumentToolbar } from "@powerhousedao/design-system";
 import { Button } from "@powerhousedao/document-engineering";
-import { setSelectedNode, useParentFolderForSelectedNode, useSelectedDrive, useDocumentById, useDocumentsInSelectedDrive } from "@powerhousedao/reactor-browser";
+import { setSelectedNode, useParentFolderForSelectedNode, useSelectedDrive, useDocumentsInSelectedDrive } from "@powerhousedao/reactor-browser";
 import { setName } from "document-model";
-import { generateId } from "document-model/core";
 import { useSelectedFinanceSnapshotDocument } from "../hooks/useFinanceSnapshotDocument.js";
-import { createSnapshot, initializeFromAccounts, addTransaction, updateWalletBalance } from "../../document-models/finance-snapshot/gen/creators.js";
-import type { AccountEntry } from "../../document-models/accounts/gen/schema/types.js";
-import type { AccountTypeInput, TransactionFlowTypeInput } from "../../document-models/finance-snapshot/gen/schema/types.js";
+import { snapshotIntegration } from "./snapshotIntegration.js";
 
 export function Editor() {
   const [document, dispatch] = useSelectedFinanceSnapshotDocument();
@@ -20,9 +17,6 @@ export function Editor() {
   const [periodEnd, setPeriodEnd] = useState("");
   const [isCreating, setIsCreating] = useState(false);
 
-  // Try to get the Accounts document if accountsDocumentId is provided
-  const accountsDocument = useDocumentById(accountsDocumentId || null);
-
   function handleClose() {
     setSelectedNode(parentFolder?.id);
   }
@@ -31,6 +25,11 @@ export function Editor() {
     // Validate inputs
     if (!accountsDocumentId.trim()) {
       alert("Please enter an Accounts Document ID");
+      return;
+    }
+
+    if (!owner.trim()) {
+      alert("Please enter an owner");
       return;
     }
 
@@ -44,261 +43,37 @@ export function Editor() {
       return;
     }
 
+    if (!document?.header?.id) {
+      alert("Document ID not found");
+      return;
+    }
+
     setIsCreating(true);
     try {
-      // Find the Accounts document
-      const foundDocument = documentsInDrive?.find(doc => doc?.header?.id === accountsDocumentId);
+      // Call the GraphQL resolver to generate the snapshot
+      const result = await snapshotIntegration.generateSnapshotFromAccounts(
+        document.header.id,
+        accountsDocumentId,
+        owner,
+        periodStart,
+        periodEnd,
+      );
 
-      if (!foundDocument) {
-        alert("Accounts document not found. Please check the document ID.");
-        setIsCreating(false);
-        return;
+      if (result.success) {
+        alert(
+          `✅ ${result.message}\n\n` +
+          `Accounts Processed: ${result.accountsProcessed}\n` +
+          `Transactions Imported: ${result.transactionsImported}\n` +
+          `Balances Calculated: ${result.balancesCalculated}`
+        );
+
+        // Clear form
+        setAccountsDocumentId("");
+        setPeriodStart("");
+        setPeriodEnd("");
+      } else {
+        alert(`❌ Failed to create snapshot: ${result.message}`);
       }
-
-      // Validate document type
-      const documentType = foundDocument?.header?.documentType;
-      if (documentType !== "powerhouse/accounts") {
-        alert(`Invalid document type: ${documentType}. Expected "powerhouse/accounts".`);
-        setIsCreating(false);
-        return;
-      }
-
-      // Get accounts from the document
-      const accountsState = (foundDocument?.state as any)?.global;
-      const accounts: AccountEntry[] = accountsState?.accounts || [];
-
-      if (accounts.length === 0) {
-        alert("No accounts found in the Accounts document.");
-        setIsCreating(false);
-        return;
-      }
-
-      // Check that all accounts have transaction files
-      const accountsWithoutTransactions = accounts.filter(acc => !acc.accountTransactionsId);
-      if (accountsWithoutTransactions.length > 0) {
-        const missingNames = accountsWithoutTransactions.map(acc => acc.name || acc.account).join(", ");
-        alert(`❌ Cannot create snapshot: The following accounts do not have transaction files:\n\n${missingNames}\n\nAll accounts must have transaction files before creating a snapshot.`);
-        setIsCreating(false);
-        return;
-      }
-
-      // Create the snapshot
-      const snapshotId = generateId();
-      const now = new Date().toISOString();
-      const startDate = new Date(periodStart).toISOString();
-      const endDate = new Date(periodEnd).toISOString();
-      const period = `${periodStart} to ${periodEnd}`;
-
-      // First create the basic snapshot
-      dispatch(createSnapshot({
-        id: snapshotId,
-        name: `Snapshot ${period}`,
-        period: period,
-        periodStart: startDate,
-        periodEnd: endDate,
-        owner: owner,
-        created: now,
-        accountsDocumentId: accountsDocumentId,
-      }));
-
-      // Define the main tokens to track
-      const tokens = ["USDC", "USDT", "USDS", "DAI", "MKR", "SKY", "ETH", "WETH"];
-
-      // Prepare accounts data for initialization
-      const accountInputs = accounts.map(acc => ({
-        id: acc.id,
-        address: acc.account,
-        name: acc.name,
-        accountType: (acc.type || "Protocol") as AccountTypeInput,
-        accountTransactionsId: acc.accountTransactionsId!,
-      }));
-
-      // Initialize from accounts (creates wallets and balances)
-      dispatch(initializeFromAccounts({
-        accountsDocumentId: accountsDocumentId,
-        accounts: accountInputs,
-        tokens: tokens,
-      }));
-
-      // Now fetch transactions and calculate balances for each account
-      const periodStartDate = new Date(startDate);
-      const periodEndDate = new Date(endDate);
-      let totalTransactions = 0;
-
-      // Track starting balances (from transactions before period)
-      const startingBalancesByWalletToken = new Map<string, bigint>();
-
-      // Track period balances
-      const balancesByWalletToken = new Map<string, {
-        wallet: string;
-        token: string;
-        accountType: AccountTypeInput;
-        inflows: bigint;
-        outflows: bigint;
-        internalInflows: bigint;
-        internalOutflows: bigint;
-      }>();
-
-      for (const account of accounts) {
-        // Fetch the AccountTransactions document
-        const txnsDocument = documentsInDrive?.find(doc => doc?.header?.id === account.accountTransactionsId);
-
-        if (!txnsDocument) {
-          console.warn(`Transactions document not found for account ${account.name}`);
-          continue;
-        }
-
-        const txnsState = (txnsDocument?.state as any)?.global;
-        const transactions = txnsState?.transactions || [];
-
-        // Calculate starting balances from transactions BEFORE the period
-        const historicalTransactions = transactions.filter((tx: any) => {
-          const txDate = new Date(tx.datetime);
-          return txDate < periodStartDate;
-        });
-
-        for (const tx of historicalTransactions) {
-          const token = tx.details?.token || "ETH";
-          const balanceKey = `${account.account}-${token}`;
-          const isInflow = tx.type === "Inflow";
-          const amountValue = BigInt(Math.floor(parseFloat(tx.amount.value) * 1e18));
-
-          if (!startingBalancesByWalletToken.has(balanceKey)) {
-            startingBalancesByWalletToken.set(balanceKey, 0n);
-          }
-
-          const currentBalance = startingBalancesByWalletToken.get(balanceKey)!;
-          if (isInflow) {
-            startingBalancesByWalletToken.set(balanceKey, currentBalance + amountValue);
-          } else {
-            startingBalancesByWalletToken.set(balanceKey, currentBalance - amountValue);
-          }
-        }
-
-        // Filter transactions by period
-        const periodTransactions = transactions.filter((tx: any) => {
-          const txDate = new Date(tx.datetime);
-          return txDate >= periodStartDate && txDate <= periodEndDate;
-        });
-
-        // Add transactions to snapshot
-        for (const tx of periodTransactions) {
-          const txId = generateId();
-          const token = tx.details?.token || "ETH";
-          const amount = tx.amount;
-          const isInflow = tx.type === "Inflow";
-
-          // Determine flow type
-          let flowType: TransactionFlowTypeInput = "EXTERNAL_OUTFLOW";
-          if (isInflow) {
-            flowType = "EXTERNAL_INFLOW";
-          }
-
-          dispatch(addTransaction({
-            id: txId,
-            block: tx.details?.blockNumber || null,
-            timestamp: tx.datetime,
-            txHash: tx.details?.txHash || "",
-            token: token,
-            counterParty: tx.counterParty,
-            amount: amount,
-            txLabel: tx.description || null,
-            counterPartyName: tx.counterPartyLabel || null,
-            flowType: flowType,
-            fromWalletType: isInflow ? null : (account.type || "Protocol") as AccountTypeInput,
-            toWalletType: isInflow ? (account.type || "Protocol") as AccountTypeInput : null,
-          }));
-
-          totalTransactions++;
-
-          // Track balances
-          const balanceKey = `${account.account}-${token}`;
-          if (!balancesByWalletToken.has(balanceKey)) {
-            balancesByWalletToken.set(balanceKey, {
-              wallet: account.account,
-              token: token,
-              accountType: (account.type || "Protocol") as AccountTypeInput,
-              inflows: 0n,
-              outflows: 0n,
-              internalInflows: 0n,
-              internalOutflows: 0n,
-            });
-          }
-
-          const balance = balancesByWalletToken.get(balanceKey)!;
-          const amountValue = BigInt(Math.floor(parseFloat(amount.value) * 1e18));
-
-          if (isInflow) {
-            balance.inflows += amountValue;
-          } else {
-            balance.outflows += amountValue;
-          }
-        }
-      }
-
-      // Update balances for all wallet × token combinations that had activity in the period
-      for (const [key, balanceData] of balancesByWalletToken.entries()) {
-        const balanceId = key;
-        const netChange = balanceData.inflows - balanceData.outflows;
-        const startingBalance = startingBalancesByWalletToken.get(key) || 0n;
-        const endingBalance = startingBalance + netChange;
-
-        const formatAmount = (value: bigint, unit: string) => ({
-          value: (Number(value) / 1e18).toFixed(6),
-          unit: unit,
-        });
-
-        dispatch(updateWalletBalance({
-          id: balanceId,
-          walletAddress: balanceData.wallet,
-          accountType: balanceData.accountType,
-          token: balanceData.token,
-          startingBalance: formatAmount(startingBalance, balanceData.token),
-          endingBalance: formatAmount(endingBalance, balanceData.token),
-          externalInflow: formatAmount(balanceData.inflows, balanceData.token),
-          externalOutflow: formatAmount(balanceData.outflows, balanceData.token),
-          internalInflow: formatAmount(balanceData.internalInflows, balanceData.token),
-          internalOutflow: formatAmount(balanceData.internalOutflows, balanceData.token),
-          netExternalChange: formatAmount(netChange, balanceData.token),
-        }));
-      }
-
-      // Also update balances for tokens that had starting balance but no activity in the period
-      for (const [key, startingBalance] of startingBalancesByWalletToken.entries()) {
-        if (!balancesByWalletToken.has(key)) {
-          // This token had balance before the period but no transactions during the period
-          const [walletAddress, token] = key.split('-');
-          const account = accounts.find(acc => acc.account === walletAddress);
-
-          if (account) {
-            const formatAmount = (value: bigint, unit: string) => ({
-              value: (Number(value) / 1e18).toFixed(6),
-              unit: unit,
-            });
-
-            dispatch(updateWalletBalance({
-              id: key,
-              walletAddress: walletAddress,
-              accountType: (account.type || "Protocol") as AccountTypeInput,
-              token: token,
-              startingBalance: formatAmount(startingBalance, token),
-              endingBalance: formatAmount(startingBalance, token), // No change
-              externalInflow: formatAmount(0n, token),
-              externalOutflow: formatAmount(0n, token),
-              internalInflow: formatAmount(0n, token),
-              internalOutflow: formatAmount(0n, token),
-              netExternalChange: formatAmount(0n, token),
-            }));
-          }
-        }
-      }
-
-      alert(`✅ Snapshot created successfully!\n\nInitialized:\n- ${accounts.length} accounts/wallets\n- ${totalTransactions} transactions imported\n- ${balancesByWalletToken.size} balances calculated\n\nPeriod: ${period}`);
-
-      // Clear form
-      setAccountsDocumentId("");
-      setPeriodStart("");
-      setPeriodEnd("");
     } catch (error) {
       console.error("Error creating snapshot:", error);
       alert("❌ Failed to create snapshot: " + (error instanceof Error ? error.message : String(error)));
@@ -403,10 +178,205 @@ export function Editor() {
             </p>
           </div>
 
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Document State (Snapshot Content):</h2>
-          <pre className="bg-gray-100 p-4 text-xs rounded mb-6 overflow-auto max-h-96">
-            {JSON.stringify(state, null, 2)}
-          </pre>
+          {/* Snapshot Balance Display */}
+          {state?.id && (
+            <div className="mb-8">
+              <h2 className="text-2xl font-semibold text-gray-900 mb-6">Snapshot Overview</h2>
+
+              {/* Calculate totals for USDC */}
+              {(() => {
+                const usdcBalances = (state.balances || []).filter((b: any) => b.token === "USDC");
+                const totalStarting = usdcBalances.reduce((sum: number, b: any) =>
+                  sum + parseFloat(b.startingBalance?.value || "0"), 0
+                );
+                const totalEnding = usdcBalances.reduce((sum: number, b: any) =>
+                  sum + parseFloat(b.endingBalance?.value || "0"), 0
+                );
+                const totalInflow = usdcBalances.reduce((sum: number, b: any) =>
+                  sum + parseFloat(b.externalInflow?.value || "0"), 0
+                );
+                const totalOutflow = usdcBalances.reduce((sum: number, b: any) =>
+                  sum + parseFloat(b.externalOutflow?.value || "0"), 0
+                );
+                const netChange = totalEnding - totalStarting;
+
+                return (
+                  <>
+                    {/* Top Balance Flow */}
+                    <div className="bg-white rounded-xl border border-gray-200 p-8 mb-6">
+                      <div className="text-center mb-4">
+                        <div className={`text-3xl font-bold ${netChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {netChange >= 0 ? '+' : ''}{netChange.toLocaleString('en-US', { maximumFractionDigits: 2 })} USD
+                        </div>
+                        <div className="text-sm text-gray-500 mt-1">Net Change</div>
+                      </div>
+
+                      <div className="grid grid-cols-4 gap-6 items-center">
+                        {/* Initial Balance */}
+                        <div className="bg-gray-50 rounded-lg p-6">
+                          <div className="text-xs text-gray-500 mb-2">
+                            {state.periodStart ? new Date(state.periodStart).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }) : ''}
+                          </div>
+                          <div className="text-sm text-gray-600 mb-2">Initial Balance</div>
+                          <div className="text-2xl font-bold text-gray-900">
+                            {totalStarting.toLocaleString('en-US', { maximumFractionDigits: 2 })} <span className="text-sm font-normal text-gray-400">USD</span>
+                          </div>
+                        </div>
+
+                        {/* Inflow */}
+                        <div className="text-center">
+                          <div className="text-4xl text-gray-300 mb-2">+</div>
+                          <div className="bg-green-50 rounded-lg p-4">
+                            <div className="text-xs text-gray-600 mb-1">Inflow</div>
+                            <div className="text-xl font-bold text-green-600">
+                              {totalInflow.toLocaleString('en-US', { maximumFractionDigits: 2 })} <span className="text-xs font-normal text-gray-400">USD</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Outflow */}
+                        <div className="text-center">
+                          <div className="text-4xl text-gray-300 mb-2">−</div>
+                          <div className="bg-red-50 rounded-lg p-4">
+                            <div className="text-xs text-gray-600 mb-1">Outflow</div>
+                            <div className="text-xl font-bold text-red-600">
+                              {totalOutflow.toLocaleString('en-US', { maximumFractionDigits: 2 })} <span className="text-xs font-normal text-gray-400">USD</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* New Balance */}
+                        <div className="bg-gray-50 rounded-lg p-6">
+                          <div className="text-xs text-gray-500 mb-2">
+                            {state.periodEnd ? new Date(state.periodEnd).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }) : ''}
+                          </div>
+                          <div className="text-sm text-gray-600 mb-2">New Balance</div>
+                          <div className="text-2xl font-bold text-gray-900">
+                            {totalEnding.toLocaleString('en-US', { maximumFractionDigits: 2 })} <span className="text-sm font-normal text-gray-400">USD</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Accounts Breakdown */}
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold text-gray-900">View by Account</h3>
+                      {(state.wallets || []).map((wallet: any) => {
+                        const walletBalances = usdcBalances.filter((b: any) => b.walletAddress === wallet.address);
+                        const walletTransactions = (state.transactions || []).filter((tx: any) =>
+                          tx.fromWalletType || tx.toWalletType
+                        );
+
+                        const walletStarting = walletBalances.reduce((sum: number, b: any) =>
+                          sum + parseFloat(b.startingBalance?.value || "0"), 0
+                        );
+                        const walletEnding = walletBalances.reduce((sum: number, b: any) =>
+                          sum + parseFloat(b.endingBalance?.value || "0"), 0
+                        );
+                        const walletInflow = walletBalances.reduce((sum: number, b: any) =>
+                          sum + parseFloat(b.externalInflow?.value || "0"), 0
+                        );
+                        const walletOutflow = walletBalances.reduce((sum: number, b: any) =>
+                          sum + parseFloat(b.externalOutflow?.value || "0"), 0
+                        );
+
+                        return (
+                          <details key={wallet.id} className="bg-white rounded-lg border border-gray-200">
+                            <summary className="cursor-pointer p-4 hover:bg-gray-50 flex justify-between items-center">
+                              <div>
+                                <div className="font-semibold text-gray-900">{wallet.label}</div>
+                                <div className="text-xs text-gray-500 font-mono">{wallet.address.slice(0, 10)}...{wallet.address.slice(-8)}</div>
+                              </div>
+                              <div className="flex gap-4 text-sm">
+                                <div className="text-right">
+                                  <div className="text-gray-500">Starting</div>
+                                  <div className="font-semibold">{walletStarting.toLocaleString('en-US', { maximumFractionDigits: 2 })} USD</div>
+                                </div>
+                                <div className="text-right">
+                                  <div className="text-gray-500">Ending</div>
+                                  <div className="font-semibold">{walletEnding.toLocaleString('en-US', { maximumFractionDigits: 2 })} USD</div>
+                                </div>
+                                <div className="text-right">
+                                  <div className="text-gray-500">Change</div>
+                                  <div className={`font-semibold ${(walletEnding - walletStarting) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                    {(walletEnding - walletStarting) >= 0 ? '+' : ''}{(walletEnding - walletStarting).toLocaleString('en-US', { maximumFractionDigits: 2 })} USD
+                                  </div>
+                                </div>
+                              </div>
+                            </summary>
+                            <div className="border-t border-gray-200 p-4 bg-gray-50">
+                              <div className="grid grid-cols-2 gap-4 mb-4">
+                                <div>
+                                  <div className="text-xs text-gray-500 mb-1">Inflow</div>
+                                  <div className="text-lg font-semibold text-green-600">
+                                    +{walletInflow.toLocaleString('en-US', { maximumFractionDigits: 2 })} USD
+                                  </div>
+                                </div>
+                                <div>
+                                  <div className="text-xs text-gray-500 mb-1">Outflow</div>
+                                  <div className="text-lg font-semibold text-red-600">
+                                    -{walletOutflow.toLocaleString('en-US', { maximumFractionDigits: 2 })} USD
+                                  </div>
+                                </div>
+                              </div>
+                              {walletTransactions.length > 0 ? (
+                                <div className="max-h-64 overflow-y-auto">
+                                  <table className="w-full text-xs">
+                                    <thead className="bg-gray-100 sticky top-0">
+                                      <tr>
+                                        <th className="text-left p-2">Date</th>
+                                        <th className="text-left p-2">Type</th>
+                                        <th className="text-left p-2">Token</th>
+                                        <th className="text-right p-2">Amount</th>
+                                        <th className="text-left p-2">Counter Party</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {walletTransactions.slice(0, 10).map((tx: any) => (
+                                        <tr key={tx.id} className="border-t border-gray-200">
+                                          <td className="p-2">{new Date(tx.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</td>
+                                          <td className="p-2">
+                                            <span className={`px-2 py-1 rounded text-xs ${
+                                              tx.flowType === 'EXTERNAL_INFLOW' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                                            }`}>
+                                              {tx.flowType === 'EXTERNAL_INFLOW' ? 'In' : 'Out'}
+                                            </span>
+                                          </td>
+                                          <td className="p-2">{tx.token}</td>
+                                          <td className="p-2 text-right font-mono">{parseFloat(tx.amount?.value || "0").toLocaleString('en-US', { maximumFractionDigits: 2 })}</td>
+                                          <td className="p-2 font-mono text-xs">{tx.counterParty?.slice(0, 8)}...{tx.counterParty?.slice(-6)}</td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                  {walletTransactions.length > 10 && (
+                                    <div className="text-center text-xs text-gray-500 mt-2">
+                                      Showing 10 of {walletTransactions.length} transactions
+                                    </div>
+                                  )}
+                                </div>
+                              ) : (
+                                <div className="text-center text-sm text-gray-500 py-4">No transactions in this period</div>
+                              )}
+                            </div>
+                          </details>
+                        );
+                      })}
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+          )}
+
+          <details className="mb-6">
+            <summary className="cursor-pointer text-lg font-semibold text-gray-700 hover:text-gray-900">
+              Debug: Raw Document State
+            </summary>
+            <pre className="bg-gray-100 p-4 text-xs rounded mt-4 overflow-auto max-h-96">
+              {JSON.stringify(state, null, 2)}
+            </pre>
+          </details>
 
           <div className="bg-yellow-50 border border-yellow-200 p-4 rounded">
             <h3 className="font-medium text-gray-900 mb-2">Document Info:</h3>
