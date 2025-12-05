@@ -56,6 +56,14 @@ export type Scalars = {
   Upload: { input: File; output: File };
 };
 
+export type AccountInput = {
+  accountTransactionsId: Scalars["PHID"]["input"];
+  accountType: AccountTypeInput | `${AccountTypeInput}`;
+  address: Scalars["EthereumAddress"]["input"];
+  id: Scalars["OID"]["input"];
+  name: Scalars["String"]["input"];
+};
+
 export type AccountType =
   | "Auditor"
   | "Operational"
@@ -92,6 +100,7 @@ export type AddWalletInput = {
 };
 
 export type CreateSnapshotInput = {
+  accountsDocumentId?: InputMaybe<Scalars["PHID"]["input"]>;
   created: Scalars["DateTime"]["input"];
   id: Scalars["OID"]["input"];
   name: Scalars["String"]["input"];
@@ -102,6 +111,7 @@ export type CreateSnapshotInput = {
 };
 
 export type FinanceSnapshotState = {
+  accountsDocumentId: Maybe<Scalars["PHID"]["output"]>;
   balances: Array<WalletBalance>;
   created: Scalars["DateTime"]["output"];
   id: Scalars["OID"]["output"];
@@ -112,6 +122,12 @@ export type FinanceSnapshotState = {
   periodStart: Scalars["DateTime"]["output"];
   transactions: Array<SnapshotTransaction>;
   wallets: Array<SnapshotWallet>;
+};
+
+export type InitializeFromAccountsInput = {
+  accounts: Array<AccountInput>;
+  accountsDocumentId: Scalars["PHID"]["input"];
+  tokens: Array<Scalars["Currency"]["input"]>;
 };
 
 export type RefreshSnapshotDataInput = {

@@ -1,11 +1,13 @@
 import { z } from "zod";
 import type {
+  AccountInput,
   AccountType,
   AccountTypeInput,
   AddTransactionInput,
   AddWalletInput,
   CreateSnapshotInput,
   FinanceSnapshotState,
+  InitializeFromAccountsInput,
   RefreshSnapshotDataInput,
   RemoveWalletInput,
   SnapshotTransaction,
@@ -56,6 +58,20 @@ export const TransactionFlowTypeInputSchema = z.enum([
   "INTERNAL_TRANSFER",
 ]);
 
+export function AccountInputSchema(): z.ZodObject<Properties<AccountInput>> {
+  return z.object({
+    accountTransactionsId: z.string(),
+    accountType: z.lazy(() => AccountTypeInputSchema),
+    address: z
+      .string()
+      .regex(/^0x[a-fA-F0-9]{40}$/, {
+        message: "Invalid Ethereum address format",
+      }),
+    id: z.string(),
+    name: z.string(),
+  });
+}
+
 export function AddTransactionInputSchema(): z.ZodObject<
   Properties<AddTransactionInput>
 > {
@@ -99,6 +115,7 @@ export function CreateSnapshotInputSchema(): z.ZodObject<
   Properties<CreateSnapshotInput>
 > {
   return z.object({
+    accountsDocumentId: z.string().nullish(),
     created: z.string().datetime(),
     id: z.string(),
     name: z.string(),
@@ -114,6 +131,7 @@ export function FinanceSnapshotStateSchema(): z.ZodObject<
 > {
   return z.object({
     __typename: z.literal("FinanceSnapshotState").optional(),
+    accountsDocumentId: z.string().nullable(),
     balances: z.array(WalletBalanceSchema()),
     created: z.string().datetime(),
     id: z.string(),
@@ -124,6 +142,16 @@ export function FinanceSnapshotStateSchema(): z.ZodObject<
     periodStart: z.string().datetime(),
     transactions: z.array(SnapshotTransactionSchema()),
     wallets: z.array(SnapshotWalletSchema()),
+  });
+}
+
+export function InitializeFromAccountsInputSchema(): z.ZodObject<
+  Properties<InitializeFromAccountsInput>
+> {
+  return z.object({
+    accounts: z.array(z.lazy(() => AccountInputSchema())),
+    accountsDocumentId: z.string(),
+    tokens: z.array(z.string()),
   });
 }
 

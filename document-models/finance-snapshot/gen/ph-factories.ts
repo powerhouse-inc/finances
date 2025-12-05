@@ -20,6 +20,7 @@ export function defaultGlobalState(): FinanceSnapshotGlobalState {
     periodEnd: "",
     owner: "",
     created: "",
+    accountsDocumentId: null,
     wallets: [],
     transactions: [],
     balances: [],

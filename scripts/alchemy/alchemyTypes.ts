@@ -76,6 +76,7 @@ export interface BlockResponse {
 }
 
 export interface TransactionEntry {
+  uniqueId: string; // Alchemy's unique identifier (includes log index for ERC20 transfers)
   counterParty: string;
   amount: { unit: string; value: string };
   txHash: string;

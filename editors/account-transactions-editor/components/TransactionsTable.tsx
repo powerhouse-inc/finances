@@ -9,6 +9,13 @@ interface TransactionsTableProps {
 }
 
 export function TransactionsTable({ transactions, budgets, onEdit, onDelete }: TransactionsTableProps) {
+  // Sort transactions by datetime, newest first
+  const sortedTransactions = [...transactions].sort((a, b) => {
+    const dateA = new Date(a.datetime).getTime();
+    const dateB = new Date(b.datetime).getTime();
+    return dateB - dateA; // Descending order (newest first)
+  });
+
   function getBudgetName(budgetId: string | null | undefined): string {
     if (!budgetId) return "No Budget";
     const budget = budgets.find(b => b.id === budgetId);
@@ -112,7 +119,7 @@ export function TransactionsTable({ transactions, budgets, onEdit, onDelete }: T
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {transactions.map((transaction) => (
+            {sortedTransactions.map((transaction) => (
               <tr key={transaction.id} className="hover:bg-gray-50">
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                   {formatDate(transaction.datetime)}

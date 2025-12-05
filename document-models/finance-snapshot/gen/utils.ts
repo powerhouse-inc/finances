@@ -21,6 +21,7 @@ export const initialGlobalState: FinanceSnapshotGlobalState = {
   periodEnd: "",
   owner: "",
   created: "",
+  accountsDocumentId: null,
   wallets: [],
   transactions: [],
   balances: [],

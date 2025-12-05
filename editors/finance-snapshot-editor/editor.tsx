@@ -3,132 +3,302 @@ import { DocumentToolbar } from "@powerhousedao/design-system";
 import { Button } from "@powerhousedao/document-engineering";
 import { setSelectedNode, useParentFolderForSelectedNode, useSelectedDrive, useDocumentById, useDocumentsInSelectedDrive } from "@powerhousedao/reactor-browser";
 import { setName } from "document-model";
+import { generateId } from "document-model/core";
 import { useSelectedFinanceSnapshotDocument } from "../hooks/useFinanceSnapshotDocument.js";
-import { createSnapshot, addWallet, addTransaction } from "../../document-models/finance-snapshot/gen/creators.js";
+import { createSnapshot, initializeFromAccounts, addTransaction, updateWalletBalance } from "../../document-models/finance-snapshot/gen/creators.js";
+import type { AccountEntry } from "../../document-models/accounts/gen/schema/types.js";
+import type { AccountTypeInput, TransactionFlowTypeInput } from "../../document-models/finance-snapshot/gen/schema/types.js";
 
 export function Editor() {
   const [document, dispatch] = useSelectedFinanceSnapshotDocument();
   const parentFolder = useParentFolderForSelectedNode();
   const selectedDrive = useSelectedDrive();
   const documentsInDrive = useDocumentsInSelectedDrive();
-  const [documentId, setDocumentId] = useState("");
+  const [accountsDocumentId, setAccountsDocumentId] = useState("");
   const [owner, setOwner] = useState("Portfolio Team");
+  const [periodStart, setPeriodStart] = useState("");
+  const [periodEnd, setPeriodEnd] = useState("");
   const [isCreating, setIsCreating] = useState(false);
 
-  // Try to get the document if documentId is provided
-  const targetDocument = useDocumentById(documentId || null);
+  // Try to get the Accounts document if accountsDocumentId is provided
+  const accountsDocument = useDocumentById(accountsDocumentId || null);
 
   function handleClose() {
     setSelectedNode(parentFolder?.id);
   }
 
-  async function handleCreateSnapshot() {
-    if (!documentId.trim()) {
-      alert("Please enter a document ID");
+  async function handleGenerateSnapshot() {
+    // Validate inputs
+    if (!accountsDocumentId.trim()) {
+      alert("Please enter an Accounts Document ID");
+      return;
+    }
+
+    if (!periodStart || !periodEnd) {
+      alert("Please select both start and end dates");
+      return;
+    }
+
+    if (new Date(periodStart) > new Date(periodEnd)) {
+      alert("Start date must be before end date");
       return;
     }
 
     setIsCreating(true);
     try {
-      // First, try to fetch and validate the document type
-      let sourceDocument = null;
-      let documentType = null;
+      // Find the Accounts document
+      const foundDocument = documentsInDrive?.find(doc => doc?.header?.id === accountsDocumentId);
 
-      // Try to fetch the document to check its type
-      // First try from documents in selected drive, then fallback to localStorage
-      console.log(`Attempting to fetch document: ${documentId} from drive: ${(selectedDrive as any)?.[0]?.header?.id}`);
-      console.log(`Documents in drive:`, documentsInDrive?.map(d => ({ id: d?.header?.id, type: d?.header?.documentType })));
-
-      // Try to find document in the current drive's documents
-      const foundDocument = documentsInDrive?.find(doc => doc?.header?.id === documentId);
-      if (foundDocument) {
-        console.log("Document found in current drive");
-        sourceDocument = foundDocument;
-        documentType = sourceDocument?.header?.documentType;
-      } else {
-        console.log("Document not found in current drive, trying localStorage...");
-        try {
-          const localDoc = localStorage.getItem(`document-${documentId}`);
-          if (localDoc) {
-            console.log("Document found in localStorage");
-            sourceDocument = JSON.parse(localDoc);
-            documentType = sourceDocument?.header?.documentType;
-          }
-        } catch (storageError) {
-          console.log("localStorage access failed", storageError);
-        }
+      if (!foundDocument) {
+        alert("Accounts document not found. Please check the document ID.");
+        setIsCreating(false);
+        return;
       }
 
       // Validate document type
-      if (!sourceDocument) {
-        alert("Document not found. Please check the document ID.");
+      const documentType = foundDocument?.header?.documentType;
+      if (documentType !== "powerhouse/accounts") {
+        alert(`Invalid document type: ${documentType}. Expected "powerhouse/accounts".`);
+        setIsCreating(false);
         return;
       }
 
-      if (documentType !== "powerhouse/account-transactions") {
-        alert(`Invalid document type: ${documentType}. Expected "powerhouse/account-transactions".`);
+      // Get accounts from the document
+      const accountsState = (foundDocument?.state as any)?.global;
+      const accounts: AccountEntry[] = accountsState?.accounts || [];
+
+      if (accounts.length === 0) {
+        alert("No accounts found in the Accounts document.");
+        setIsCreating(false);
         return;
       }
 
-      // Document is valid, proceed with snapshot creation
-      const snapshotId = Date.now().toString();
+      // Check that all accounts have transaction files
+      const accountsWithoutTransactions = accounts.filter(acc => !acc.accountTransactionsId);
+      if (accountsWithoutTransactions.length > 0) {
+        const missingNames = accountsWithoutTransactions.map(acc => acc.name || acc.account).join(", ");
+        alert(`❌ Cannot create snapshot: The following accounts do not have transaction files:\n\n${missingNames}\n\nAll accounts must have transaction files before creating a snapshot.`);
+        setIsCreating(false);
+        return;
+      }
+
+      // Create the snapshot
+      const snapshotId = generateId();
       const now = new Date().toISOString();
-      const accountState = sourceDocument?.state?.global;
+      const startDate = new Date(periodStart).toISOString();
+      const endDate = new Date(periodEnd).toISOString();
+      const period = `${periodStart} to ${periodEnd}`;
 
-      // Create the basic snapshot
+      // First create the basic snapshot
       dispatch(createSnapshot({
         id: snapshotId,
-        name: `Snapshot from ${documentId}`,
-        period: "Full Period",
-        periodStart: "2020-01-01T00:00:00.000Z",
-        periodEnd: now,
+        name: `Snapshot ${period}`,
+        period: period,
+        periodStart: startDate,
+        periodEnd: endDate,
         owner: owner,
         created: now,
+        accountsDocumentId: accountsDocumentId,
       }));
 
-      // Add wallet and transactions if available
-      if (accountState) {
-        // Add the wallet from the account
-        if (accountState.account?.account) {
-          const walletId = Date.now().toString() + "_wallet";
-          dispatch(addWallet({
-            id: walletId,
-            address: accountState.account.account,
-            accountType: "Operational",
-            label: accountState.account.name || accountState.account.account,
-            accountTransactionsRef: documentId,
+      // Define the main tokens to track
+      const tokens = ["USDC", "USDT", "USDS", "DAI", "MKR", "SKY", "ETH", "WETH"];
+
+      // Prepare accounts data for initialization
+      const accountInputs = accounts.map(acc => ({
+        id: acc.id,
+        address: acc.account,
+        name: acc.name,
+        accountType: (acc.type || "Protocol") as AccountTypeInput,
+        accountTransactionsId: acc.accountTransactionsId!,
+      }));
+
+      // Initialize from accounts (creates wallets and balances)
+      dispatch(initializeFromAccounts({
+        accountsDocumentId: accountsDocumentId,
+        accounts: accountInputs,
+        tokens: tokens,
+      }));
+
+      // Now fetch transactions and calculate balances for each account
+      const periodStartDate = new Date(startDate);
+      const periodEndDate = new Date(endDate);
+      let totalTransactions = 0;
+
+      // Track starting balances (from transactions before period)
+      const startingBalancesByWalletToken = new Map<string, bigint>();
+
+      // Track period balances
+      const balancesByWalletToken = new Map<string, {
+        wallet: string;
+        token: string;
+        accountType: AccountTypeInput;
+        inflows: bigint;
+        outflows: bigint;
+        internalInflows: bigint;
+        internalOutflows: bigint;
+      }>();
+
+      for (const account of accounts) {
+        // Fetch the AccountTransactions document
+        const txnsDocument = documentsInDrive?.find(doc => doc?.header?.id === account.accountTransactionsId);
+
+        if (!txnsDocument) {
+          console.warn(`Transactions document not found for account ${account.name}`);
+          continue;
+        }
+
+        const txnsState = (txnsDocument?.state as any)?.global;
+        const transactions = txnsState?.transactions || [];
+
+        // Calculate starting balances from transactions BEFORE the period
+        const historicalTransactions = transactions.filter((tx: any) => {
+          const txDate = new Date(tx.datetime);
+          return txDate < periodStartDate;
+        });
+
+        for (const tx of historicalTransactions) {
+          const token = tx.details?.token || "ETH";
+          const balanceKey = `${account.account}-${token}`;
+          const isInflow = tx.type === "Inflow";
+          const amountValue = BigInt(Math.floor(parseFloat(tx.amount.value) * 1e18));
+
+          if (!startingBalancesByWalletToken.has(balanceKey)) {
+            startingBalancesByWalletToken.set(balanceKey, 0n);
+          }
+
+          const currentBalance = startingBalancesByWalletToken.get(balanceKey)!;
+          if (isInflow) {
+            startingBalancesByWalletToken.set(balanceKey, currentBalance + amountValue);
+          } else {
+            startingBalancesByWalletToken.set(balanceKey, currentBalance - amountValue);
+          }
+        }
+
+        // Filter transactions by period
+        const periodTransactions = transactions.filter((tx: any) => {
+          const txDate = new Date(tx.datetime);
+          return txDate >= periodStartDate && txDate <= periodEndDate;
+        });
+
+        // Add transactions to snapshot
+        for (const tx of periodTransactions) {
+          const txId = generateId();
+          const token = tx.details?.token || "ETH";
+          const amount = tx.amount;
+          const isInflow = tx.type === "Inflow";
+
+          // Determine flow type
+          let flowType: TransactionFlowTypeInput = "EXTERNAL_OUTFLOW";
+          if (isInflow) {
+            flowType = "EXTERNAL_INFLOW";
+          }
+
+          dispatch(addTransaction({
+            id: txId,
+            block: tx.details?.blockNumber || null,
+            timestamp: tx.datetime,
+            txHash: tx.details?.txHash || "",
+            token: token,
+            counterParty: tx.counterParty,
+            amount: amount,
+            txLabel: tx.description || null,
+            counterPartyName: tx.counterPartyLabel || null,
+            flowType: flowType,
+            fromWalletType: isInflow ? null : (account.type || "Protocol") as AccountTypeInput,
+            toWalletType: isInflow ? (account.type || "Protocol") as AccountTypeInput : null,
           }));
-        }
 
-        // Add all transactions
-        if (accountState.transactions && Array.isArray(accountState.transactions)) {
-          accountState.transactions.forEach((tx: any, index: number) => {
-            const txId = `${snapshotId}_tx_${index}`;
-            dispatch(addTransaction({
-              id: txId,
-              block: tx.details?.blockNumber || null,
-              timestamp: tx.datetime,
-              txHash: tx.details?.txHash || "",
-              token: tx.details?.token || "ETH",
-              counterParty: tx.counterParty,
-              amount: tx.amount,
-              txLabel: null,
-              counterPartyName: null,
-              flowType: "EXTERNAL_OUTFLOW",
-              fromWalletType: "Operational",
-              toWalletType: null,
-            }));
-          });
+          totalTransactions++;
 
-          alert(`✅ Snapshot created successfully!\n\nImported:\n- 1 wallet (${accountState.account?.account})\n- ${accountState.transactions.length} transactions`);
-        } else {
-          alert("✅ Snapshot created with wallet info, but no transactions found in source document.");
+          // Track balances
+          const balanceKey = `${account.account}-${token}`;
+          if (!balancesByWalletToken.has(balanceKey)) {
+            balancesByWalletToken.set(balanceKey, {
+              wallet: account.account,
+              token: token,
+              accountType: (account.type || "Protocol") as AccountTypeInput,
+              inflows: 0n,
+              outflows: 0n,
+              internalInflows: 0n,
+              internalOutflows: 0n,
+            });
+          }
+
+          const balance = balancesByWalletToken.get(balanceKey)!;
+          const amountValue = BigInt(Math.floor(parseFloat(amount.value) * 1e18));
+
+          if (isInflow) {
+            balance.inflows += amountValue;
+          } else {
+            balance.outflows += amountValue;
+          }
         }
-      } else {
-        alert("✅ Basic snapshot created, but no account data found in source document.");
       }
 
-      setDocumentId("");
+      // Update balances for all wallet × token combinations that had activity in the period
+      for (const [key, balanceData] of balancesByWalletToken.entries()) {
+        const balanceId = key;
+        const netChange = balanceData.inflows - balanceData.outflows;
+        const startingBalance = startingBalancesByWalletToken.get(key) || 0n;
+        const endingBalance = startingBalance + netChange;
+
+        const formatAmount = (value: bigint, unit: string) => ({
+          value: (Number(value) / 1e18).toFixed(6),
+          unit: unit,
+        });
+
+        dispatch(updateWalletBalance({
+          id: balanceId,
+          walletAddress: balanceData.wallet,
+          accountType: balanceData.accountType,
+          token: balanceData.token,
+          startingBalance: formatAmount(startingBalance, balanceData.token),
+          endingBalance: formatAmount(endingBalance, balanceData.token),
+          externalInflow: formatAmount(balanceData.inflows, balanceData.token),
+          externalOutflow: formatAmount(balanceData.outflows, balanceData.token),
+          internalInflow: formatAmount(balanceData.internalInflows, balanceData.token),
+          internalOutflow: formatAmount(balanceData.internalOutflows, balanceData.token),
+          netExternalChange: formatAmount(netChange, balanceData.token),
+        }));
+      }
+
+      // Also update balances for tokens that had starting balance but no activity in the period
+      for (const [key, startingBalance] of startingBalancesByWalletToken.entries()) {
+        if (!balancesByWalletToken.has(key)) {
+          // This token had balance before the period but no transactions during the period
+          const [walletAddress, token] = key.split('-');
+          const account = accounts.find(acc => acc.account === walletAddress);
+
+          if (account) {
+            const formatAmount = (value: bigint, unit: string) => ({
+              value: (Number(value) / 1e18).toFixed(6),
+              unit: unit,
+            });
+
+            dispatch(updateWalletBalance({
+              id: key,
+              walletAddress: walletAddress,
+              accountType: (account.type || "Protocol") as AccountTypeInput,
+              token: token,
+              startingBalance: formatAmount(startingBalance, token),
+              endingBalance: formatAmount(startingBalance, token), // No change
+              externalInflow: formatAmount(0n, token),
+              externalOutflow: formatAmount(0n, token),
+              internalInflow: formatAmount(0n, token),
+              internalOutflow: formatAmount(0n, token),
+              netExternalChange: formatAmount(0n, token),
+            }));
+          }
+        }
+      }
+
+      alert(`✅ Snapshot created successfully!\n\nInitialized:\n- ${accounts.length} accounts/wallets\n- ${totalTransactions} transactions imported\n- ${balancesByWalletToken.size} balances calculated\n\nPeriod: ${period}`);
+
+      // Clear form
+      setAccountsDocumentId("");
+      setPeriodStart("");
+      setPeriodEnd("");
     } catch (error) {
       console.error("Error creating snapshot:", error);
       alert("❌ Failed to create snapshot: " + (error instanceof Error ? error.message : String(error)));
@@ -160,7 +330,7 @@ export function Editor() {
 
           {/* Create Snapshot Section */}
           <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Create Snapshot from Account Transactions</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Create Snapshot from Accounts</h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>
@@ -172,21 +342,47 @@ export function Editor() {
                   type="text"
                   value={owner}
                   onChange={(e) => setOwner(e.target.value)}
-                  placeholder="Enter owner name..."
+                  placeholder="Portfolio Team"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
 
               <div>
-                <label htmlFor="documentId" className="block text-sm font-medium text-gray-700 mb-2">
-                  Account Transactions Document ID
+                <label htmlFor="accountsDocumentId" className="block text-sm font-medium text-gray-700 mb-2">
+                  Accounts Document ID
                 </label>
                 <input
-                  id="documentId"
+                  id="accountsDocumentId"
                   type="text"
-                  value={documentId}
-                  onChange={(e) => setDocumentId(e.target.value)}
-                  placeholder="Enter document ID..."
+                  value={accountsDocumentId}
+                  onChange={(e) => setAccountsDocumentId(e.target.value)}
+                  placeholder="Enter Accounts document ID..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="periodStart" className="block text-sm font-medium text-gray-700 mb-2">
+                  Start Date
+                </label>
+                <input
+                  id="periodStart"
+                  type="date"
+                  value={periodStart}
+                  onChange={(e) => setPeriodStart(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="periodEnd" className="block text-sm font-medium text-gray-700 mb-2">
+                  End Date
+                </label>
+                <input
+                  id="periodEnd"
+                  type="date"
+                  value={periodEnd}
+                  onChange={(e) => setPeriodEnd(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
@@ -194,16 +390,16 @@ export function Editor() {
 
             <div className="flex justify-end">
               <Button
-                onClick={handleCreateSnapshot}
-                disabled={isCreating || !documentId.trim() || !owner.trim()}
+                onClick={handleGenerateSnapshot}
+                disabled={isCreating || !accountsDocumentId.trim() || !owner.trim() || !periodStart || !periodEnd}
                 className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isCreating ? "Creating..." : "Create Snapshot"}
+                {isCreating ? "Generating..." : "Generate Snapshot"}
               </Button>
             </div>
 
             <p className="text-sm text-gray-500 mt-2">
-              This will fetch the account transactions document and create a snapshot with all wallets and transactions.
+              This will validate that all accounts have transaction files and create a snapshot with wallets and balance entries for the specified period.
             </p>
           </div>
 

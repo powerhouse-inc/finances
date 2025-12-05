@@ -13,8 +13,8 @@
             "changeLog": [],
             "state": {
                 "global": {
-                    "schema": "type FinanceSnapshotState {\n  id: OID!\n  name: String!\n  period: String!\n  periodStart: DateTime!\n  periodEnd: DateTime!\n  owner: String!\n  created: DateTime!\n  \n  wallets: [SnapshotWallet!]!\n  transactions: [SnapshotTransaction!]!\n  balances: [WalletBalance!]!\n}\n\ntype SnapshotWallet {\n  id: OID!\n  address: EthereumAddress!\n  accountType: AccountType!\n  label: String!\n  accountTransactionsRef: PHID\n}\n\ntype SnapshotTransaction {\n  id: ID!\n  block: Int\n  timestamp: DateTime!\n  txHash: String!\n  token: Currency!\n  counterParty: EthereumAddress!\n  amount: Amount_Currency!\n  txLabel: String\n  counterPartyName: String\n  flowType: TransactionFlowType!\n  fromWalletType: AccountType\n  toWalletType: AccountType\n}\n\ntype WalletBalance {\n  id: OID!\n  walletAddress: EthereumAddress!\n  accountType: AccountType!\n  token: Currency!\n  startingBalance: Amount_Currency!\n  endingBalance: Amount_Currency!\n  externalInflow: Amount_Currency!\n  externalOutflow: Amount_Currency!\n  internalInflow: Amount_Currency!\n  internalOutflow: Amount_Currency!\n  netExternalChange: Amount_Currency!\n}\n\nenum AccountType {\n  Protocol\n  Auditor\n  Operational\n  PaymentProcessor\n}\n\nenum TransactionFlowType {\n  EXTERNAL_INFLOW\n  EXTERNAL_OUTFLOW\n  INTERNAL_TRANSFER\n}",
-                    "initialValue": "{\n  \"id\": \"\",\n  \"name\": \"\",\n  \"period\": \"\",\n  \"periodStart\": \"\",\n  \"periodEnd\": \"\",\n  \"owner\": \"\",\n  \"created\": \"\",\n  \"wallets\": [],\n  \"transactions\": [],\n  \"balances\": []\n}",
+                    "schema": "type FinanceSnapshotState {\n  id: OID!\n  name: String!\n  period: String!\n  periodStart: DateTime!\n  periodEnd: DateTime!\n  owner: String!\n  created: DateTime!\n  accountsDocumentId: PHID\n\n  wallets: [SnapshotWallet!]!\n  transactions: [SnapshotTransaction!]!\n  balances: [WalletBalance!]!\n}\n\ntype SnapshotWallet {\n  id: OID!\n  address: EthereumAddress!\n  accountType: AccountType!\n  label: String!\n  accountTransactionsRef: PHID\n}\n\ntype SnapshotTransaction {\n  id: ID!\n  block: Int\n  timestamp: DateTime!\n  txHash: String!\n  token: Currency!\n  counterParty: EthereumAddress!\n  amount: Amount_Currency!\n  txLabel: String\n  counterPartyName: String\n  flowType: TransactionFlowType!\n  fromWalletType: AccountType\n  toWalletType: AccountType\n}\n\ntype WalletBalance {\n  id: OID!\n  walletAddress: EthereumAddress!\n  accountType: AccountType!\n  token: Currency!\n  startingBalance: Amount_Currency!\n  endingBalance: Amount_Currency!\n  externalInflow: Amount_Currency!\n  externalOutflow: Amount_Currency!\n  internalInflow: Amount_Currency!\n  internalOutflow: Amount_Currency!\n  netExternalChange: Amount_Currency!\n}\n\nenum AccountType {\n  Protocol\n  Auditor\n  Operational\n  PaymentProcessor\n}\n\nenum TransactionFlowType {\n  EXTERNAL_INFLOW\n  EXTERNAL_OUTFLOW\n  INTERNAL_TRANSFER\n}",
+                    "initialValue": "{\n  \"id\": \"\",\n  \"name\": \"\",\n  \"period\": \"\",\n  \"periodStart\": \"\",\n  \"periodEnd\": \"\",\n  \"owner\": \"\",\n  \"created\": \"\",\n  \"accountsDocumentId\": null,\n  \"wallets\": [],\n  \"transactions\": [],\n  \"balances\": []\n}",
                     "examples": []
                 },
                 "local": {
@@ -33,7 +33,7 @@
                             "id": "create-snapshot",
                             "name": "CREATE_SNAPSHOT",
                             "description": "Create a new financial snapshot with basic information",
-                            "schema": "input CreateSnapshotInput {\n  id: OID!\n  name: String!\n  period: String!\n  periodStart: DateTime!\n  periodEnd: DateTime!\n  owner: String!\n  created: DateTime!\n}",
+                            "schema": "input CreateSnapshotInput {\n  id: OID!\n  name: String!\n  period: String!\n  periodStart: DateTime!\n  periodEnd: DateTime!\n  owner: String!\n  created: DateTime!\n  accountsDocumentId: PHID\n}",
                             "template": "Create a new financial snapshot with basic information",
                             "reducer": "",
                             "errors": [],
@@ -81,6 +81,25 @@
                             "template": "Refresh snapshot data by pulling transactions from linked AccountTransactions documents",
                             "reducer": "",
                             "errors": [],
+                            "examples": [],
+                            "scope": "global"
+                        },
+                        {
+                            "id": "initialize-from-accounts",
+                            "name": "INITIALIZE_FROM_ACCOUNTS",
+                            "description": "Initialize snapshot from an Accounts document with validation",
+                            "schema": "input InitializeFromAccountsInput {\n  accountsDocumentId: PHID!\n  accounts: [AccountInput!]!\n  tokens: [Currency!]!\n}\n\ninput AccountInput {\n  id: OID!\n  address: EthereumAddress!\n  name: String!\n  accountType: AccountTypeInput!\n  accountTransactionsId: PHID!\n}",
+                            "template": "Initialize snapshot from an Accounts document with validation",
+                            "reducer": "",
+                            "errors": [
+                                {
+                                    "id": "missing-transactions",
+                                    "code": "MISSING_TRANSACTIONS",
+                                    "name": "MissingTransactionsError",
+                                    "description": "Thrown when an account does not have a transactions file",
+                                    "template": ""
+                                }
+                            ],
                             "examples": [],
                             "scope": "global"
                         }

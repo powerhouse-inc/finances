@@ -6,6 +6,7 @@ import {
   type RemoveWalletInput,
   type UpdatePeriodInput,
   type RefreshSnapshotDataInput,
+  type InitializeFromAccountsInput,
 } from "../types.js";
 import {
   type CreateSnapshotAction,
@@ -13,6 +14,7 @@ import {
   type RemoveWalletAction,
   type UpdatePeriodAction,
   type RefreshSnapshotDataAction,
+  type InitializeFromAccountsAction,
 } from "./actions.js";
 
 export const createSnapshot = (input: CreateSnapshotInput) =>
@@ -57,5 +59,14 @@ export const refreshSnapshotData = (input: RefreshSnapshotDataInput) =>
     { ...input },
     undefined,
     z.RefreshSnapshotDataInputSchema,
+    "global",
+  );
+
+export const initializeFromAccounts = (input: InitializeFromAccountsInput) =>
+  createAction<InitializeFromAccountsAction>(
+    "INITIALIZE_FROM_ACCOUNTS",
+    { ...input },
+    undefined,
+    z.InitializeFromAccountsInputSchema,
     "global",
   );

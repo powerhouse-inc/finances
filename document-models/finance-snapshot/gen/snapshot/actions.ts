@@ -5,6 +5,7 @@ import type {
   RemoveWalletInput,
   UpdatePeriodInput,
   RefreshSnapshotDataInput,
+  InitializeFromAccountsInput,
 } from "../types.js";
 
 export type CreateSnapshotAction = Action & {
@@ -27,10 +28,15 @@ export type RefreshSnapshotDataAction = Action & {
   type: "REFRESH_SNAPSHOT_DATA";
   input: RefreshSnapshotDataInput;
 };
+export type InitializeFromAccountsAction = Action & {
+  type: "INITIALIZE_FROM_ACCOUNTS";
+  input: InitializeFromAccountsInput;
+};
 
 export type FinanceSnapshotSnapshotAction =
   | CreateSnapshotAction
   | AddWalletAction
   | RemoveWalletAction
   | UpdatePeriodAction
-  | RefreshSnapshotDataAction;
+  | RefreshSnapshotDataAction
+  | InitializeFromAccountsAction;

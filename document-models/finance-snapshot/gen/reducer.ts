@@ -65,6 +65,15 @@ export const stateReducer: StateReducer<FinanceSnapshotPHState> = (
       );
       break;
 
+    case "INITIALIZE_FROM_ACCOUNTS":
+      z.InitializeFromAccountsInputSchema().parse(action.input);
+      SnapshotReducer.initializeFromAccountsOperation(
+        (state as any)[action.scope],
+        action as any,
+        dispatch,
+      );
+      break;
+
     case "ADD_TRANSACTION":
       z.AddTransactionInputSchema().parse(action.input);
       TransactionsReducer.addTransactionOperation(

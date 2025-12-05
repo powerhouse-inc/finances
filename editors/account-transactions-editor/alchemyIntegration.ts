@@ -3,7 +3,7 @@
  * Follows the contributor-billing pattern for local/remote compatibility
  */
 
-import { getAlchemyGraphQLEndpoint, isLocalEnvironment, logEnvironmentInfo } from "../../scripts/alchemy/alchemyEnvironment.js";
+import { getAlchemyGraphQLEndpoint, isLocalEnvironment } from "../../scripts/alchemy/alchemyEnvironment.js";
 
 export interface AlchemyIntegrationResult {
   success: boolean;
@@ -45,10 +45,6 @@ export class AlchemyIntegrationService {
    * Works in both local Connect and remote Switchboard environments
    */
   async getTransactionsFromAlchemy(address: string): Promise<AlchemyTransactionsResult> {
-    // Log environment for debugging
-    logEnvironmentInfo();
-    console.log(`[AlchemyIntegration] ${this.isLocal ? 'Local' : 'Remote'} mode - calling ${this.graphqlEndpoint}`);
-
     try {
       const response = await fetch(this.graphqlEndpoint, {
         method: 'POST',
@@ -105,9 +101,7 @@ export class AlchemyIntegrationService {
       }
 
       if (result.data?.AccountTransactions_getTransactionsFromAlchemy) {
-        const data = result.data.AccountTransactions_getTransactionsFromAlchemy;
-        console.log(`[AlchemyIntegration] Success in ${this.isLocal ? 'local' : 'remote'} mode:`, data);
-        return data;
+        return result.data.AccountTransactions_getTransactionsFromAlchemy;
       } else {
         throw new Error("Failed to get transactions from Alchemy");
       }
@@ -123,10 +117,6 @@ export class AlchemyIntegrationService {
    * Works in both local Connect and remote Switchboard environments
    */
   async fetchTransactionsForDocument(docId: string, address: string): Promise<AlchemyIntegrationResult> {
-    // Log environment for debugging
-    logEnvironmentInfo();
-    console.log(`[AlchemyIntegration] ${this.isLocal ? 'Local' : 'Remote'} mode - calling ${this.graphqlEndpoint}`);
-
     try {
       const response = await fetch(this.graphqlEndpoint, {
         method: 'POST',
@@ -166,9 +156,7 @@ export class AlchemyIntegrationService {
       }
 
       if (result.data?.AccountTransactions_fetchTransactionsFromAlchemy?.success) {
-        const data = result.data.AccountTransactions_fetchTransactionsFromAlchemy;
-        console.log(`[AlchemyIntegration] Success in ${this.isLocal ? 'local' : 'remote'} mode:`, data);
-        return data;
+        return result.data.AccountTransactions_fetchTransactionsFromAlchemy;
       } else {
         throw new Error("Failed to fetch transactions from Alchemy");
       }

@@ -53,7 +53,6 @@ export function convertToTransactionEntry(
   userAddress: string,
   blockTimestamp?: number
 ): TransactionEntry {
-  console.log(`[AlchemyHelpers] convertToTransactionEntry called for tx: ${transfer.hash?.slice(0, 10)}`);
   // Convert value based on decimals for ERC20 tokens
   let value: string;
   if (transfer.category === "erc20" && transfer.rawContract.decimal) {
@@ -96,9 +95,6 @@ export function convertToTransactionEntry(
   // Extract year from the actual transaction date for accounting period
   const transactionDate = new Date(blockTimestamp || Date.now());
 
-  // Debug logging
-  console.log(`[AlchemyHelpers] Transaction ${transfer.hash.slice(0, 10)}... - Direction: ${direction}, From: ${transfer.from.slice(0, 8)}..., To: ${transfer.to.slice(0, 8)}..., User: ${userAddress.slice(0, 8)}...`);
-
   // Validation - throw error if critical fields are undefined
   if (!direction) {
     throw new Error(`Direction is undefined for transaction ${transfer.hash}. From: ${transfer.from}, To: ${transfer.to}, User: ${userAddress}`);
@@ -111,6 +107,7 @@ export function convertToTransactionEntry(
   }
 
   return {
+    uniqueId: transfer.uniqueId,
     counterParty,
     amount: {
       unit: token,

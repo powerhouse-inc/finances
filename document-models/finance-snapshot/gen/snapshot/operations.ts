@@ -5,6 +5,7 @@ import {
   type RemoveWalletAction,
   type UpdatePeriodAction,
   type RefreshSnapshotDataAction,
+  type InitializeFromAccountsAction,
 } from "./actions.js";
 import { type FinanceSnapshotState } from "../types.js";
 
@@ -32,6 +33,11 @@ export interface FinanceSnapshotSnapshotOperations {
   refreshSnapshotDataOperation: (
     state: FinanceSnapshotState,
     action: RefreshSnapshotDataAction,
+    dispatch?: SignalDispatch,
+  ) => void;
+  initializeFromAccountsOperation: (
+    state: FinanceSnapshotState,
+    action: InitializeFromAccountsAction,
     dispatch?: SignalDispatch,
   ) => void;
 }

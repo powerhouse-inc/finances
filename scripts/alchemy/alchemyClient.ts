@@ -44,10 +44,6 @@ export class AlchemyClient {
           params: [params]
         };
 
-        console.log(`[AlchemyClient] Sending request to Alchemy:`, {
-          method: data.method,
-          params: data.params[0]
-        });
 
         const response = await fetch(this.baseURL, {
           method: 'POST',
@@ -67,19 +63,6 @@ export class AlchemyClient {
           throw new Error(`Alchemy RPC error: ${result.error.message}`);
         }
 
-        // Debug: Log first transfer to see what fields Alchemy actually returns
-        if (!('error' in result) && result.result.transfers.length > 0) {
-          const firstTransfer = result.result.transfers[0];
-          console.log(`[AlchemyClient] Raw Alchemy transfer data:`, {
-            hash: firstTransfer.hash?.slice(0, 10),
-            from: firstTransfer.from,
-            to: firstTransfer.to,
-            blockNum: firstTransfer.blockNum,
-            asset: firstTransfer.asset,
-            category: firstTransfer.category,
-            allFields: Object.keys(firstTransfer)
-          });
-        }
 
         return result;
       },
@@ -203,6 +186,7 @@ export class AlchemyClient {
       })
     };
 
+
     try {
       const response = await this.getAssetTransfers(params);
       const transfers = response.result.transfers;
@@ -266,6 +250,7 @@ export class AlchemyClient {
       })
     };
 
+
     try {
       const response = await this.getAssetTransfers(params);
       const transfers = response.result.transfers;
@@ -296,8 +281,6 @@ export class AlchemyClient {
     maxCount?: number;
   } = {}): Promise<{ transactions: TransactionEntry[]; summary: { outgoing: number; incoming: number; unique: number } }> {
 
-    console.log(`[AlchemyClient] Fetching all transactions for address: ${address}`);
-
     try {
       // Fetch both outgoing and incoming transactions in parallel
       const [outgoingTxs, incomingTxs] = await Promise.all([
@@ -305,10 +288,12 @@ export class AlchemyClient {
         this.getTransactionsToAddress(address, options)
       ]);
 
-      // Combine and deduplicate transactions by hash
+      // Combine and deduplicate transactions by uniqueId
+      // Note: uniqueId includes log index, so multiple ERC20 transfers in same txHash are preserved
       const allTransactions = [...outgoingTxs, ...incomingTxs];
+
       const uniqueTransactions = allTransactions.filter((tx, index, self) =>
-        index === self.findIndex(t => t.txHash === tx.txHash)
+        index === self.findIndex(t => t.uniqueId === tx.uniqueId)
       );
 
       const summary = {
@@ -317,7 +302,7 @@ export class AlchemyClient {
         unique: uniqueTransactions.length
       };
 
-      console.log(`[AlchemyClient] Transaction summary:`, summary);
+      console.log(`[AlchemyClient] Fetched ${summary.outgoing} outgoing + ${summary.incoming} incoming = ${summary.unique} unique transactions (${allTransactions.length - summary.unique} duplicates removed)`);
 
       return {
         transactions: uniqueTransactions,

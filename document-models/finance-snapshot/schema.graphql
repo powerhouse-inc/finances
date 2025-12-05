@@ -23,7 +23,8 @@ type FinanceSnapshotState {
   periodEnd: DateTime!
   owner: String!
   created: DateTime!
-  
+  accountsDocumentId: PHID
+
   wallets: [SnapshotWallet!]!
   transactions: [SnapshotTransaction!]!
   balances: [WalletBalance!]!
@@ -91,6 +92,7 @@ input CreateSnapshotInput {
   periodEnd: DateTime!
   owner: String!
   created: DateTime!
+  accountsDocumentId: PHID
 }
 
 input AddWalletInput {
@@ -121,6 +123,20 @@ input UpdatePeriodInput {
 input RefreshSnapshotDataInput {
   recalculateBalances: Boolean
   clearExistingData: Boolean
+}
+
+input InitializeFromAccountsInput {
+  accountsDocumentId: PHID!
+  accounts: [AccountInput!]!
+  tokens: [Currency!]!
+}
+
+input AccountInput {
+  id: OID!
+  address: EthereumAddress!
+  name: String!
+  accountType: AccountTypeInput!
+  accountTransactionsId: PHID!
 }
 
 # transactions

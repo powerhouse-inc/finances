@@ -1,4 +1,5 @@
 import type { FinanceSnapshotSnapshotOperations } from "../../gen/snapshot/operations.js";
+import { MissingTransactionsError } from "../../gen/snapshot/error.js";
 
 export const reducer: FinanceSnapshotSnapshotOperations = {
     createSnapshotOperation(state, action) {
@@ -9,6 +10,7 @@ export const reducer: FinanceSnapshotSnapshotOperations = {
         state.periodEnd = action.input.periodEnd;
         state.owner = action.input.owner;
         state.created = action.input.created;
+        state.accountsDocumentId = action.input.accountsDocumentId || null;
     },
     addWalletOperation(state, action) {
         const wallet = {
@@ -48,5 +50,50 @@ export const reducer: FinanceSnapshotSnapshotOperations = {
         }
         // The actual data fetching and population would be handled in the editor/UI layer
         // This reducer just prepares the state for new data
+    },
+    initializeFromAccountsOperation(state, action) {
+        // Set the accounts document reference
+        state.accountsDocumentId = action.input.accountsDocumentId;
+
+        // Validate that all accounts have transaction files
+        for (const account of action.input.accounts) {
+            if (!account.accountTransactionsId) {
+                throw new MissingTransactionsError(
+                    `Account ${account.name} (${account.address}) does not have a transactions file. All accounts must have transaction files before creating a snapshot.`
+                );
+            }
+        }
+
+        // Create wallet entries for all accounts
+        for (const account of action.input.accounts) {
+            const wallet = {
+                id: account.id,
+                address: account.address,
+                accountType: account.accountType,
+                label: account.name,
+                accountTransactionsRef: account.accountTransactionsId
+            };
+            state.wallets.push(wallet);
+        }
+
+        // Initialize balances for all accounts and tokens
+        for (const account of action.input.accounts) {
+            for (const token of action.input.tokens) {
+                const balance = {
+                    id: `${account.id}-${token}`,
+                    walletAddress: account.address,
+                    accountType: account.accountType,
+                    token: token,
+                    startingBalance: { value: "0", unit: token },
+                    endingBalance: { value: "0", unit: token },
+                    externalInflow: { value: "0", unit: token },
+                    externalOutflow: { value: "0", unit: token },
+                    internalInflow: { value: "0", unit: token },
+                    internalOutflow: { value: "0", unit: token },
+                    netExternalChange: { value: "0", unit: token }
+                };
+                state.balances.push(balance);
+            }
+        }
     }
 };

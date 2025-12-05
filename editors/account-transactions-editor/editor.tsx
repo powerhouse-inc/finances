@@ -80,11 +80,6 @@ export function Editor() {
       return;
     }
 
-    console.log("[Editor] Fetch transactions called with:", {
-      address: account.account,
-      documentName: document.header.name
-    });
-
     setIsLoadingTransactions(true);
     try {
       // Try the new method first (when reactor is updated)
@@ -92,34 +87,10 @@ export function Editor() {
         const result = await alchemyIntegration.getTransactionsFromAlchemy(account.account);
 
         if (result.success) {
-          console.log(`[Editor] Successfully fetched ${result.transactions.length} transactions from Alchemy`);
-          console.log("TRANSACTIONS",result.transactions)
-          console.log(`[Editor] Raw transactions from Alchemy (first 3):`, result.transactions.slice(0, 3).map(tx => ({
-            hash: tx.txHash?.slice(0, 10),
-            direction: tx.direction,
-            from: tx.from?.slice(0, 8),
-            to: tx.to?.slice(0, 8),
-            counterParty: tx.counterParty?.slice(0, 8)
-          })));
-
-          // Get existing transaction hashes for deduplication
-          const existingTxHashes = new Set(
-            document.state.global.transactions.map(tx => tx.txHash)
-          );
-          console.log(`[Editor] Found ${existingTxHashes.size} existing transactions in document`);
-
-          // Filter out transactions that already exist
-          const newTransactions = result.transactions.filter(tx => !existingTxHashes.has(tx.txHash));
-          console.log(`[Editor] Found ${newTransactions.length} new transactions (${result.transactions.length - newTransactions.length} duplicates skipped)`);
-
-          if (newTransactions.length === 0) {
-            alert("No new transactions found. All transactions from Alchemy are already in the document.");
-            return;
-          }
-
-          // Add only new transactions to the local document
+          // Add all transactions from Alchemy (no deduplication by txHash)
+          // Note: Multiple ERC20 transfers can share the same txHash, so we add all of them
           let addedCount = 0;
-          for (const txData of newTransactions) {
+          for (const txData of result.transactions) {
             // Validation - ensure we have required fields before adding
             if (!txData.direction) {
               console.error(`[Editor] Skipping transaction with undefined direction:`, txData);
@@ -169,14 +140,10 @@ export function Editor() {
             addedCount++;
           }
 
-          // Debug: Log the full document state to check direction values
-          console.log(`[Editor] Full document state after adding transactions:`, JSON.stringify(document.state.global.transactions, null, 2));
-          console.log(`[Editor] Direction values found:`, document.state.global.transactions.map(tx => `${tx.id.slice(0, 8)}... -> ${tx.direction}`));
-
           const skippedCount = result.transactions.length - addedCount;
           const message = skippedCount > 0
-            ? `Successfully added ${addedCount} new transactions from Alchemy (${skippedCount} duplicates skipped)`
-            : `Successfully added ${addedCount} new transactions from Alchemy`;
+            ? `Successfully added ${addedCount} transactions from Alchemy (${skippedCount} skipped due to validation errors)`
+            : `Successfully added ${addedCount} transactions from Alchemy`;
 
           alert(message);
           return;
@@ -188,7 +155,6 @@ export function Editor() {
 
         // If the new mutation doesn't exist, provide helpful message
         if (errorMessage.includes("400") || errorMessage.includes("Cannot query field")) {
-          console.log("[Editor] New mutation not available, reactor needs restart");
           alert("The transaction fetching feature requires a reactor restart to work. Please restart the reactor (ph vetra) and try again.");
           return;
         }
