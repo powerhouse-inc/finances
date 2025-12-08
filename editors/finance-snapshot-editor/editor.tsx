@@ -183,76 +183,78 @@ export function Editor() {
             <div className="mb-8">
               <h2 className="text-2xl font-semibold text-gray-900 mb-6">Snapshot Overview</h2>
 
-              {/* Calculate totals for USDC */}
+              {/* Calculate totals for SKY and USDS */}
               {(() => {
-                const usdcBalances = (state.balances || []).filter((b: any) => b.token === "USDC");
-                const totalStarting = usdcBalances.reduce((sum: number, b: any) =>
+                const skyUsdsBalances = (state.balances || []).filter((b: any) => b.token === "SKY" || b.token === "USDS");
+                const skyBalances = skyUsdsBalances.filter((b: any) => b.token === "SKY");
+                const usdsBalances = skyUsdsBalances.filter((b: any) => b.token === "USDS");
+
+                // Calculate totals for SKY
+                const skyStarting = skyBalances.reduce((sum: number, b: any) =>
                   sum + parseFloat(b.startingBalance?.value || "0"), 0
                 );
-                const totalEnding = usdcBalances.reduce((sum: number, b: any) =>
+                const skyEnding = skyBalances.reduce((sum: number, b: any) =>
                   sum + parseFloat(b.endingBalance?.value || "0"), 0
                 );
-                const totalInflow = usdcBalances.reduce((sum: number, b: any) =>
-                  sum + parseFloat(b.externalInflow?.value || "0"), 0
+
+                // Calculate totals for USDS
+                const usdsStarting = usdsBalances.reduce((sum: number, b: any) =>
+                  sum + parseFloat(b.startingBalance?.value || "0"), 0
                 );
-                const totalOutflow = usdcBalances.reduce((sum: number, b: any) =>
-                  sum + parseFloat(b.externalOutflow?.value || "0"), 0
+                const usdsEnding = usdsBalances.reduce((sum: number, b: any) =>
+                  sum + parseFloat(b.endingBalance?.value || "0"), 0
                 );
-                const netChange = totalEnding - totalStarting;
 
                 return (
                   <>
-                    {/* Top Balance Flow */}
-                    <div className="bg-white rounded-xl border border-gray-200 p-8 mb-6">
-                      <div className="text-center mb-4">
-                        <div className={`text-3xl font-bold ${netChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          {netChange >= 0 ? '+' : ''}{netChange.toLocaleString('en-US', { maximumFractionDigits: 2 })} USD
+                    {/* SKY and USDS Balance Display */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                      {/* SKY Balance Card */}
+                      <div className="bg-white rounded-xl border border-gray-200 p-6">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-4">SKY</h3>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="bg-gray-50 rounded-lg p-4">
+                            <div className="text-xs text-gray-500 mb-1">
+                              {state.periodStart ? new Date(state.periodStart).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }) : ''}
+                            </div>
+                            <div className="text-sm text-gray-600 mb-2">Starting Balance</div>
+                            <div className="text-2xl font-bold text-gray-900">
+                              {skyStarting.toLocaleString('en-US', { maximumFractionDigits: 2 })}
+                            </div>
+                          </div>
+                          <div className="bg-gray-50 rounded-lg p-4">
+                            <div className="text-xs text-gray-500 mb-1">
+                              {state.periodEnd ? new Date(state.periodEnd).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }) : ''}
+                            </div>
+                            <div className="text-sm text-gray-600 mb-2">Ending Balance</div>
+                            <div className="text-2xl font-bold text-gray-900">
+                              {skyEnding.toLocaleString('en-US', { maximumFractionDigits: 2 })}
+                            </div>
+                          </div>
                         </div>
-                        <div className="text-sm text-gray-500 mt-1">Net Change</div>
                       </div>
 
-                      <div className="grid grid-cols-4 gap-6 items-center">
-                        {/* Initial Balance */}
-                        <div className="bg-gray-50 rounded-lg p-6">
-                          <div className="text-xs text-gray-500 mb-2">
-                            {state.periodStart ? new Date(state.periodStart).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }) : ''}
-                          </div>
-                          <div className="text-sm text-gray-600 mb-2">Initial Balance</div>
-                          <div className="text-2xl font-bold text-gray-900">
-                            {totalStarting.toLocaleString('en-US', { maximumFractionDigits: 2 })} <span className="text-sm font-normal text-gray-400">USD</span>
-                          </div>
-                        </div>
-
-                        {/* Inflow */}
-                        <div className="text-center">
-                          <div className="text-4xl text-gray-300 mb-2">+</div>
-                          <div className="bg-green-50 rounded-lg p-4">
-                            <div className="text-xs text-gray-600 mb-1">Inflow</div>
-                            <div className="text-xl font-bold text-green-600">
-                              {totalInflow.toLocaleString('en-US', { maximumFractionDigits: 2 })} <span className="text-xs font-normal text-gray-400">USD</span>
+                      {/* USDS Balance Card */}
+                      <div className="bg-white rounded-xl border border-gray-200 p-6">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-4">USDS</h3>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="bg-gray-50 rounded-lg p-4">
+                            <div className="text-xs text-gray-500 mb-1">
+                              {state.periodStart ? new Date(state.periodStart).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }) : ''}
+                            </div>
+                            <div className="text-sm text-gray-600 mb-2">Starting Balance</div>
+                            <div className="text-2xl font-bold text-gray-900">
+                              {usdsStarting.toLocaleString('en-US', { maximumFractionDigits: 2 })}
                             </div>
                           </div>
-                        </div>
-
-                        {/* Outflow */}
-                        <div className="text-center">
-                          <div className="text-4xl text-gray-300 mb-2">−</div>
-                          <div className="bg-red-50 rounded-lg p-4">
-                            <div className="text-xs text-gray-600 mb-1">Outflow</div>
-                            <div className="text-xl font-bold text-red-600">
-                              {totalOutflow.toLocaleString('en-US', { maximumFractionDigits: 2 })} <span className="text-xs font-normal text-gray-400">USD</span>
+                          <div className="bg-gray-50 rounded-lg p-4">
+                            <div className="text-xs text-gray-500 mb-1">
+                              {state.periodEnd ? new Date(state.periodEnd).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }) : ''}
                             </div>
-                          </div>
-                        </div>
-
-                        {/* New Balance */}
-                        <div className="bg-gray-50 rounded-lg p-6">
-                          <div className="text-xs text-gray-500 mb-2">
-                            {state.periodEnd ? new Date(state.periodEnd).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }) : ''}
-                          </div>
-                          <div className="text-sm text-gray-600 mb-2">New Balance</div>
-                          <div className="text-2xl font-bold text-gray-900">
-                            {totalEnding.toLocaleString('en-US', { maximumFractionDigits: 2 })} <span className="text-sm font-normal text-gray-400">USD</span>
+                            <div className="text-sm text-gray-600 mb-2">Ending Balance</div>
+                            <div className="text-2xl font-bold text-gray-900">
+                              {usdsEnding.toLocaleString('en-US', { maximumFractionDigits: 2 })}
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -262,23 +264,25 @@ export function Editor() {
                     <div className="space-y-4">
                       <h3 className="text-lg font-semibold text-gray-900">View by Account</h3>
                       {(state.wallets || []).map((wallet: any) => {
-                        const walletBalances = usdcBalances.filter((b: any) => b.walletAddress === wallet.address);
-                        const walletTransactions = (state.transactions || []).filter((tx: any) =>
-                          tx.fromWalletType || tx.toWalletType
-                        );
+                        const walletBalances = skyUsdsBalances.filter((b: any) => b.walletAddress === wallet.address);
+                        const walletSkyBalances = walletBalances.filter((b: any) => b.token === "SKY");
+                        const walletUsdsBalances = walletBalances.filter((b: any) => b.token === "USDS");
 
-                        const walletStarting = walletBalances.reduce((sum: number, b: any) =>
+                        const walletSkyStarting = walletSkyBalances.reduce((sum: number, b: any) =>
                           sum + parseFloat(b.startingBalance?.value || "0"), 0
                         );
-                        const walletEnding = walletBalances.reduce((sum: number, b: any) =>
+                        const walletSkyEnding = walletSkyBalances.reduce((sum: number, b: any) =>
                           sum + parseFloat(b.endingBalance?.value || "0"), 0
                         );
-                        const walletInflow = walletBalances.reduce((sum: number, b: any) =>
-                          sum + parseFloat(b.externalInflow?.value || "0"), 0
+                        const walletUsdsStarting = walletUsdsBalances.reduce((sum: number, b: any) =>
+                          sum + parseFloat(b.startingBalance?.value || "0"), 0
                         );
-                        const walletOutflow = walletBalances.reduce((sum: number, b: any) =>
-                          sum + parseFloat(b.externalOutflow?.value || "0"), 0
+                        const walletUsdsEnding = walletUsdsBalances.reduce((sum: number, b: any) =>
+                          sum + parseFloat(b.endingBalance?.value || "0"), 0
                         );
+
+                        // Only show wallet if it has SKY or USDS balances
+                        if (walletBalances.length === 0) return null;
 
                         return (
                           <details key={wallet.id} className="bg-white rounded-lg border border-gray-200">
@@ -288,76 +292,26 @@ export function Editor() {
                                 <div className="text-xs text-gray-500 font-mono">{wallet.address.slice(0, 10)}...{wallet.address.slice(-8)}</div>
                               </div>
                               <div className="flex gap-4 text-sm">
-                                <div className="text-right">
-                                  <div className="text-gray-500">Starting</div>
-                                  <div className="font-semibold">{walletStarting.toLocaleString('en-US', { maximumFractionDigits: 2 })} USD</div>
-                                </div>
-                                <div className="text-right">
-                                  <div className="text-gray-500">Ending</div>
-                                  <div className="font-semibold">{walletEnding.toLocaleString('en-US', { maximumFractionDigits: 2 })} USD</div>
-                                </div>
-                                <div className="text-right">
-                                  <div className="text-gray-500">Change</div>
-                                  <div className={`font-semibold ${(walletEnding - walletStarting) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                    {(walletEnding - walletStarting) >= 0 ? '+' : ''}{(walletEnding - walletStarting).toLocaleString('en-US', { maximumFractionDigits: 2 })} USD
+                                {walletSkyBalances.length > 0 && (
+                                  <div className="text-right">
+                                    <div className="text-gray-500">SKY Starting</div>
+                                    <div className="font-semibold">{walletSkyStarting.toLocaleString('en-US', { maximumFractionDigits: 2 })}</div>
+                                    <div className="text-gray-500 mt-1">SKY Ending</div>
+                                    <div className="font-semibold">{walletSkyEnding.toLocaleString('en-US', { maximumFractionDigits: 2 })}</div>
                                   </div>
-                                </div>
+                                )}
+                                {walletUsdsBalances.length > 0 && (
+                                  <div className="text-right">
+                                    <div className="text-gray-500">USDS Starting</div>
+                                    <div className="font-semibold">{walletUsdsStarting.toLocaleString('en-US', { maximumFractionDigits: 2 })}</div>
+                                    <div className="text-gray-500 mt-1">USDS Ending</div>
+                                    <div className="font-semibold">{walletUsdsEnding.toLocaleString('en-US', { maximumFractionDigits: 2 })}</div>
+                                  </div>
+                                )}
                               </div>
                             </summary>
                             <div className="border-t border-gray-200 p-4 bg-gray-50">
-                              <div className="grid grid-cols-2 gap-4 mb-4">
-                                <div>
-                                  <div className="text-xs text-gray-500 mb-1">Inflow</div>
-                                  <div className="text-lg font-semibold text-green-600">
-                                    +{walletInflow.toLocaleString('en-US', { maximumFractionDigits: 2 })} USD
-                                  </div>
-                                </div>
-                                <div>
-                                  <div className="text-xs text-gray-500 mb-1">Outflow</div>
-                                  <div className="text-lg font-semibold text-red-600">
-                                    -{walletOutflow.toLocaleString('en-US', { maximumFractionDigits: 2 })} USD
-                                  </div>
-                                </div>
-                              </div>
-                              {walletTransactions.length > 0 ? (
-                                <div className="max-h-64 overflow-y-auto">
-                                  <table className="w-full text-xs">
-                                    <thead className="bg-gray-100 sticky top-0">
-                                      <tr>
-                                        <th className="text-left p-2">Date</th>
-                                        <th className="text-left p-2">Type</th>
-                                        <th className="text-left p-2">Token</th>
-                                        <th className="text-right p-2">Amount</th>
-                                        <th className="text-left p-2">Counter Party</th>
-                                      </tr>
-                                    </thead>
-                                    <tbody>
-                                      {walletTransactions.slice(0, 10).map((tx: any) => (
-                                        <tr key={tx.id} className="border-t border-gray-200">
-                                          <td className="p-2">{new Date(tx.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</td>
-                                          <td className="p-2">
-                                            <span className={`px-2 py-1 rounded text-xs ${
-                                              tx.flowType === 'EXTERNAL_INFLOW' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                                            }`}>
-                                              {tx.flowType === 'EXTERNAL_INFLOW' ? 'In' : 'Out'}
-                                            </span>
-                                          </td>
-                                          <td className="p-2">{tx.token}</td>
-                                          <td className="p-2 text-right font-mono">{parseFloat(tx.amount?.value || "0").toLocaleString('en-US', { maximumFractionDigits: 2 })}</td>
-                                          <td className="p-2 font-mono text-xs">{tx.counterParty?.slice(0, 8)}...{tx.counterParty?.slice(-6)}</td>
-                                        </tr>
-                                      ))}
-                                    </tbody>
-                                  </table>
-                                  {walletTransactions.length > 10 && (
-                                    <div className="text-center text-xs text-gray-500 mt-2">
-                                      Showing 10 of {walletTransactions.length} transactions
-                                    </div>
-                                  )}
-                                </div>
-                              ) : (
-                                <div className="text-center text-sm text-gray-500 py-4">No transactions in this period</div>
-                              )}
+                              <div className="text-center text-sm text-gray-500 py-4">Balance details for SKY and USDS</div>
                             </div>
                           </details>
                         );

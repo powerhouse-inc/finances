@@ -47,14 +47,21 @@ function transformNodesToSidebarNodes(
   driveName: string,
 ): SidebarNode[] {
   // Group nodes by document type
-  const accountsNodes = nodes.filter(n =>
-    isFileNodeKind(n) && n.documentType === 'powerhouse/accounts'
+  const accountsNodes = nodes.filter(
+    (n) => isFileNodeKind(n) && n.documentType === "powerhouse/accounts",
   );
-  const transactionsNodes = nodes.filter(n =>
-    isFileNodeKind(n) && n.documentType === 'powerhouse/account-transactions'
+  const transactionsNodes = nodes.filter(
+    (n) => isFileNodeKind(n) && n.documentType === "powerhouse/account-transactions",
   );
-  const otherNodes = nodes.filter(n =>
-    !isFileNodeKind(n) || !n.documentType?.includes('account')
+  const snapshotNodes = nodes.filter(
+    (n) => isFileNodeKind(n) && n.documentType === "powerhouse/finance-snapshot",
+  );
+  const otherNodes = nodes.filter(
+    (n) =>
+      !isFileNodeKind(n) ||
+      !["powerhouse/accounts", "powerhouse/account-transactions", "powerhouse/finance-snapshot"].includes(
+        n.documentType || "",
+      ),
   );
 
   const children: SidebarNode[] = [];
@@ -78,6 +85,17 @@ function transformNodesToSidebarNodes(
       icon: "FolderClose" as const,
       expandedIcon: "FolderOpen" as const,
       children: buildSidebarNodes(transactionsNodes, null),
+    });
+  }
+
+  // === SNAPSHOTS SECTION ===
+  if (snapshotNodes.length > 0) {
+    children.push({
+      id: "snapshots-category",
+      title: "Snapshots",
+      icon: "FolderClose" as const,
+      expandedIcon: "FolderOpen" as const,
+      children: buildSidebarNodes(snapshotNodes, null),
     });
   }
 
