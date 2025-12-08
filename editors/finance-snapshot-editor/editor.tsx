@@ -1,21 +1,28 @@
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { DocumentToolbar } from "@powerhousedao/design-system";
-import { Button } from "@powerhousedao/document-engineering";
+import { Button, PHIDInput } from "@powerhousedao/document-engineering";
 import { setSelectedNode, useParentFolderForSelectedNode, useSelectedDrive, useDocumentsInSelectedDrive } from "@powerhousedao/reactor-browser";
 import { setName } from "document-model";
 import { useSelectedFinanceSnapshotDocument } from "../hooks/useFinanceSnapshotDocument.js";
 import { snapshotIntegration } from "./snapshotIntegration.js";
+import { DocumentHeader } from "./components/DocumentHeader.js";
 
 export function Editor() {
   const [document, dispatch] = useSelectedFinanceSnapshotDocument();
   const parentFolder = useParentFolderForSelectedNode();
-  const selectedDrive = useSelectedDrive();
-  const documentsInDrive = useDocumentsInSelectedDrive();
   const [accountsDocumentId, setAccountsDocumentId] = useState("");
   const [owner, setOwner] = useState("Portfolio Team");
   const [periodStart, setPeriodStart] = useState("");
   const [periodEnd, setPeriodEnd] = useState("");
   const [isCreating, setIsCreating] = useState(false);
+  const selectedDrive = useSelectedDrive();
+  const documentsInDrive = useDocumentsInSelectedDrive();
+  const accountDocuments = (documentsInDrive || []).filter(
+    (doc: any) => doc?.header?.documentType === "powerhouse/accounts",
+  );
+  const selectedAccountDoc = accountDocuments.find(
+    (doc: any) => doc?.header?.id === accountsDocumentId,
+  );
 
   function handleClose() {
     setSelectedNode(parentFolder?.id);
@@ -91,17 +98,13 @@ export function Editor() {
 
       <div className="flex-1 overflow-auto">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Finance Snapshot</h1>
-            <input
-              type="text"
-              value={document?.header?.name || "Untitled Snapshot"}
-              onChange={(e) => dispatch(setName(e.target.value))}
-              className="text-lg text-gray-600 bg-transparent border-none outline-none focus:bg-white focus:border focus:border-blue-500 px-2 py-1 rounded"
-              placeholder="Enter document name..."
+          {/* Document Header */}
+          {document && (
+            <DocumentHeader
+              document={document as any}
+              onNameChange={(name) => dispatch(setName(name))}
             />
-          </div>
+          )}
 
           {/* Create Snapshot Section */}
           <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
@@ -124,16 +127,68 @@ export function Editor() {
 
               <div>
                 <label htmlFor="accountsDocumentId" className="block text-sm font-medium text-gray-700 mb-2">
-                  Accounts Document ID
+                  Accounts Document
                 </label>
-                <input
+                <PHIDInput
                   id="accountsDocumentId"
-                  type="text"
+                  autoComplete
+                  allowUris={false}
                   value={accountsDocumentId}
-                  onChange={(e) => setAccountsDocumentId(e.target.value)}
-                  placeholder="Enter Accounts document ID..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Select or paste Accounts document PHID..."
+                  variant="withValueAndTitle"
+                  fetchOptionsCallback={useCallback(
+                    async (userInput: string) => {
+                      const query = (userInput || "").toLowerCase();
+                      return accountDocuments
+                        .filter((doc: any) => {
+                          const name = (doc.header?.name || "").toLowerCase();
+                          const id = (doc.header?.id || "").toLowerCase();
+                          return !query || name.includes(query) || id.includes(query);
+                        })
+                        .map((doc: any) => ({
+                          value: doc.header.id,
+                          title: doc.header.name || doc.header.id, // show document name in the bar
+                          description: doc.header.documentType || "Type not available", // show type
+                          path: { text: doc.header.id, url: "" }, // show ID beneath
+                        }));
+                    },
+                    [accountDocuments],
+                  )}
+                  fetchSelectedOptionCallback={useCallback(
+                    async (value: string) => {
+                      if (!value) return undefined;
+                      const doc = accountDocuments.find((d: any) => d?.header?.id === value);
+                      if (doc) {
+                        return {
+                          value: doc.header.id,
+                          title: doc.header.name || doc.header.id,
+                          description: doc.header.documentType || "Type not available",
+                          path: { text: doc.header.id, url: "" },
+                        };
+                      }
+                      // fallback when pasted PHID not in drive
+                      return {
+                        value,
+                        title: value,
+                        description: "Type not available",
+                        path: { text: value, url: "" },
+                      };
+                    },
+                    [accountDocuments],
+                  )}
+                  onChange={(val) => setAccountsDocumentId(val || "")}
+                  className="w-full"
                 />
+                <p className="text-xs text-gray-500 mt-1">
+                  {accountDocuments.length > 0
+                    ? `Found ${accountDocuments.length} Accounts document${accountDocuments.length === 1 ? "" : "s"} in this drive.`
+                    : "No Accounts documents found in this drive. You can still paste a PHID."}
+                </p>
+                {selectedAccountDoc && (
+                  <p className="text-xs text-gray-600 mt-1">
+                    Selected: {selectedAccountDoc.header.name || selectedAccountDoc.header.id} ({selectedAccountDoc.header.id})
+                  </p>
+                )}
               </div>
 
               <div>
@@ -323,35 +378,7 @@ export function Editor() {
             </div>
           )}
 
-          <details className="mb-6">
-            <summary className="cursor-pointer text-lg font-semibold text-gray-700 hover:text-gray-900">
-              Debug: Raw Document State
-            </summary>
-            <pre className="bg-gray-100 p-4 text-xs rounded mt-4 overflow-auto max-h-96">
-              {JSON.stringify(state, null, 2)}
-            </pre>
-          </details>
-
-          <div className="bg-yellow-50 border border-yellow-200 p-4 rounded">
-            <h3 className="font-medium text-gray-900 mb-2">Document Info:</h3>
-            <p><strong>Header ID:</strong> {(header as any)?.id || 'N/A'} (Document instance ID)</p>
-            <p><strong>State ID:</strong> {state?.id || 'null'} (Snapshot content ID)</p>
-            <p><strong>Current Drive:</strong> {(selectedDrive as any)?.[0]?.state?.global?.name || 'Unknown'} (ID: {(selectedDrive as any)?.[0]?.header?.id || 'N/A'})</p>
-            <p><strong>Documents in Drive:</strong> {documentsInDrive?.length || 0} documents</p>
-            {documentsInDrive && documentsInDrive.length > 0 && (
-              <details className="mt-2">
-                <summary className="cursor-pointer font-medium">Available Documents in Drive</summary>
-                <div className="mt-2 pl-4">
-                  {documentsInDrive.map((doc, index) => (
-                    <div key={index} className="text-sm mb-1">
-                      <strong>ID:</strong> {doc?.header?.id} | <strong>Type:</strong> {doc?.header?.documentType} | <strong>Name:</strong> {doc?.header?.name || 'Untitled'}
-                    </div>
-                  ))}
-                </div>
-              </details>
-            )}
-            <p><strong>Status:</strong> {state?.id ? 'Snapshot has been created!' : 'No snapshot created yet - state is empty'}</p>
-          </div>
+          {/* Debug section removed per request */}
         </div>
       </div>
     </div>

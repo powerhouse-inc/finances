@@ -1,26 +1,19 @@
 import { Button } from "@powerhousedao/document-engineering";
-import type { TransactionEntry, Budget } from "../../../document-models/account-transactions/gen/types.js";
+import type { TransactionEntry } from "../../../document-models/account-transactions/gen/types.js";
 
 interface TransactionsTableProps {
   transactions: TransactionEntry[];
-  budgets: Budget[];
   onEdit: (transaction: TransactionEntry) => void;
   onDelete: (id: string) => void;
 }
 
-export function TransactionsTable({ transactions, budgets, onEdit, onDelete }: TransactionsTableProps) {
+export function TransactionsTable({ transactions, onEdit, onDelete }: TransactionsTableProps) {
   // Sort transactions by datetime, newest first
   const sortedTransactions = [...transactions].sort((a, b) => {
     const dateA = new Date(a.datetime).getTime();
     const dateB = new Date(b.datetime).getTime();
     return dateB - dateA; // Descending order (newest first)
   });
-
-  function getBudgetName(budgetId: string | null | undefined): string {
-    if (!budgetId) return "No Budget";
-    const budget = budgets.find(b => b.id === budgetId);
-    return budget?.name || "Unknown Budget";
-  }
 
   function formatAmount(amount: string | { unit: string; value: string }): string {
     try {
@@ -105,9 +98,6 @@ export function TransactionsTable({ transactions, budgets, onEdit, onDelete }: T
                 Token
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Budget
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Tx Hash
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -164,11 +154,6 @@ export function TransactionsTable({ transactions, budgets, onEdit, onDelete }: T
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                     {transaction.details.token}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                    {getBudgetName(transaction.budget)}
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">

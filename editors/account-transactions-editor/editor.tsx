@@ -219,7 +219,6 @@ export function Editor() {
 
                 <TransactionsTable
                   transactions={document.state.global.transactions}
-                  budgets={document.state.global.budgets}
                   onEdit={handleEditClick}
                   onDelete={handleDeleteTransaction}
                 />
