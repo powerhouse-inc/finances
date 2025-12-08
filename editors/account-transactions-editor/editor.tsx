@@ -183,6 +183,7 @@ export function Editor() {
 
           <AccountSection
             account={document.state.global.account}
+            hasFetchedTransactions={(document.state.global.transactions || []).length > 0}
             onSetAccount={(address, name) => {
               dispatch(setAccount({ address, name }));
             }}

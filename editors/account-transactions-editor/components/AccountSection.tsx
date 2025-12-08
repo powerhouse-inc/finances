@@ -4,10 +4,11 @@ import type { Account } from "../../../document-models/account-transactions/gen/
 
 interface AccountSectionProps {
   account: Account;
+  hasFetchedTransactions: boolean;
   onSetAccount: (address: string, name?: string) => void;
 }
 
-export function AccountSection({ account, onSetAccount }: AccountSectionProps) {
+export function AccountSection({ account, hasFetchedTransactions, onSetAccount }: AccountSectionProps) {
   const [isEditing, setIsEditing] = useState(false);
 
   function handleSubmit(values: { address: string; name?: string }) {
@@ -18,12 +19,13 @@ export function AccountSection({ account, onSetAccount }: AccountSectionProps) {
   }
 
   const hasAccount = account.account && account.account.trim() !== "";
+  const isLocked = hasAccount && hasFetchedTransactions;
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-6 mb-8">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold text-gray-900">Account Settings</h2>
-        {hasAccount && !isEditing && (
+        {hasAccount && !isLocked && !isEditing && (
           <Button
             onClick={() => setIsEditing(true)}
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 text-sm"
@@ -83,7 +85,7 @@ export function AccountSection({ account, onSetAccount }: AccountSectionProps) {
             </svg>
             <div className="flex-1">
               <h3 className="text-sm font-medium text-green-800">
-                Account Configured
+                Account Configured {isLocked ? "":""}
               </h3>
               <p className="text-sm text-green-700 mt-1 font-mono break-all">
                 {account.account}
@@ -91,6 +93,11 @@ export function AccountSection({ account, onSetAccount }: AccountSectionProps) {
               {account.name && (
                 <p className="text-sm text-green-600 mt-1">
                   Name: {account.name}
+                </p>
+              )}
+              {isLocked && (
+                <p className="text-xs text-gray-600 mt-2">
+                  Account is locked after fetching transactions. Create a new document to use a different account.
                 </p>
               )}
             </div>
@@ -105,6 +112,11 @@ export function AccountSection({ account, onSetAccount }: AccountSectionProps) {
           }}
           className="space-y-4"
         >
+          {isLocked && (
+            <p className="text-sm text-gray-600">
+              Account changes are disabled after transactions have been fetched.
+            </p>
+          )}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Ethereum Address *
@@ -114,6 +126,7 @@ export function AccountSection({ account, onSetAccount }: AccountSectionProps) {
               placeholder="0x..."
               className="w-full font-mono"
               required
+              disabled={isLocked}
             />
             <p className="text-xs text-gray-500 mt-1">
               Enter the Ethereum address for this account
@@ -127,6 +140,7 @@ export function AccountSection({ account, onSetAccount }: AccountSectionProps) {
               name="name"
               placeholder="My Main Wallet"
               className="w-full"
+              disabled={isLocked}
             />
             <p className="text-xs text-gray-500 mt-1">
               A friendly name for this account
@@ -136,6 +150,7 @@ export function AccountSection({ account, onSetAccount }: AccountSectionProps) {
             <Button
               type="submit"
               className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2"
+              disabled={isLocked}
             >
               Set Account
             </Button>
@@ -143,6 +158,7 @@ export function AccountSection({ account, onSetAccount }: AccountSectionProps) {
               type="button"
               onClick={() => setIsEditing(false)}
               className="bg-gray-300 hover:bg-gray-400 text-gray-700 px-6 py-2"
+              disabled={isLocked}
             >
               Cancel
             </Button>
